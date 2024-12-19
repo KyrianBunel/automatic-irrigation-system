@@ -46,6 +46,8 @@ If you whant the full experience you will need extra parts :
 ### Home page & Dashboard
 <img width="600" alt="Capture d’écran 2023-11-24 à 09 25 02" src="https://github.com/KyrianBunel/Automatic-Watering-System/assets/136705314/ae5d1ec4-e019-4077-bf2f-7e15ebe8740a">
 
+### NodeRED dashboard
+
 # Weather station :
 <img width="575" alt="Capture d’écran 2024-05-02 à 09 52 37" src="https://github.com/KyrianBunel/Automatic-Watering-System/assets/136705314/31bd3141-2804-4d15-b55d-4a1a0c62ad59"><img width="575" alt="Capture d’écran 2024-05-02 à 09 52 37" src="https://github.com/KyrianBunel/Automatic-Watering-System/assets/136705314/a941a943-170a-44f0-a0c6-2e01a71dcc4b">
 
