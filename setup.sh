@@ -6,60 +6,66 @@ BGreen='\033[1;32m'       # Green
 BBlue='\033[1;34m'        # Blue
 BYellow='\033[1;33m'      # Yellow
 
+# Fonction pour gérer les erreurs
+handle_error() {
+    echo -e "${BRed}[ERROR]${Color_Off} Une erreur est survenue lors de l'exécution du script."
+    exit 1
+}
+
 # Mise à jour et upgrade du Raspberry Pi
 echo -e "${BBlue}[INFO]${Color_Off} Updating Raspberry Pi"
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y || handle_error
 echo -e "${BGreen}[DONE]${Color_Off} System up to date"
 
 # Installation de Node-RED
 echo -e "${BBlue}[INFO]${Color_Off} Installing Node-RED"
-bash <(curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/deb/update-nodejs-and-nodered)
-sudo systemctl enable nodered.service
-cd ~/.node-red
-npm install node-red-dashboard
+bash <(curl -sL https://raw.githubusercontent.com/node-red/linux-installers/master/deb/update-nodejs-and-nodered) || handle_error
+sudo systemctl enable nodered.service || handle_error
+cd ~/.node-red || handle_error
+npm install node-red-dashboard || handle_error
 echo -e "${BGreen}[DONE]${Color_Off} Node-RED Installed"
 
 # Création des répertoires nécessaires
 echo -e "${BBlue}[INFO]${Color_Off} Création des répertoires pour ArrosageAUTO"
-mkdir -p /home/pi/Documents/ArrosageAUTO
+mkdir -p /home/pi/Documents/ArrosageAUTO || handle_error
 
 # Téléchargement des fichiers depuis GitHub
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO.py depuis GitHub..."
-curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/Code/ArrosageAUTO.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO_SERVER.py depuis GitHub..."
-curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/Code/ArrosageAUTO_SERVER.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO_SERVER.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
 echo -e "Téléchargement du fichier gestion_serie.py depuis GitHub..."
-curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/Code/gestion_serie.py -o /home/pi/Documents/ArrosageAUTO/gestion_serie.py
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/gestion_serie.py -o /home/pi/Documents/ArrosageAUTO/gestion_serie.py || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier data.csv depuis GitHub..."
-curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/Code/data.csv -o /home/pi/Documents/ArrosageAUTO/data.csv
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/data.csv -o /home/pi/Documents/ArrosageAUTO/data.csv || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier flows.json depuis GitHub..."
-curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/Code/flows.json -o /home/pi/Documents/ArrosageAUTO/flows.json
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/flows.json -o /home/pi/Documents/ArrosageAUTO/flows.json || handle_error
 echo -e "${BGreen}[DONE]${Color_Off} Fichiers téléchargés"
 
 # Importation du fichier NodeRED
-cd ~/.node-red
-cp /home/pi/Documents/ArrosageAUTO/flows.json flows_$(hostname).json
+cd ~/.node-red || handle_error
+cp /home/pi/Documents/ArrosageAUTO/flows.json flows_$(hostname).json || handle_error
 
 # Donner les permissions d'exécution aux fichiers Python
 echo "Modification des permissions des fichiers Python..."
-chmod +x /home/pi/Documents/ArrosageAUTO/gestion_serie.py
-chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py
-chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py
+chmod +x /home/pi/Documents/ArrosageAUTO/gestion_serie.py || handle_error
+chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
+chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
 
 # Installation de mosquitto et des dépendances Python
 echo -e "${BBlue}[INFO]${Color_Off} Installation de mosquitto et des dépendances Python..."
-sudo apt install -y mosquitto mosquitto-clients
-sudo systemctl enable mosquitto.service
-sudo apt install python3
-sudo apt install python3-pip -y
-sudo apt install python3-flask -y
-sudo apt install python3-pyserial
-sudo apt install python3-serial
-sudo apt install python3-paho-mqtt
-sudo apt install python3-numpy -y
-sudo apt install python3-scipy -y
-sudo apt install python3-matplotlib -y
-sudo apt install python3-logging
+sudo apt install -y mosquitto mosquitto-clients || handle_error
+sudo systemctl enable mosquitto.service || handle_error
+sudo apt install python3 || handle_error
+sudo apt install python3-pip -y || handle_error
+sudo apt install python3-flask -y || handle_error
+#sudo apt install python3-pyserial || handle_error
+sudo apt install python3-serial || handle_error
+sudo apt install python3-paho-mqtt || handle_error
+sudo apt install python3-numpy -y || handle_error
+sudo apt install python3-scipy -y || handle_error
+sudo apt install python3-matplotlib -y || handle_error
+#sudo apt install python3-logging || handle_error
 
 # Création du fichier de service pour l'arrosage automatique
 echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service pour l'arrosage automatique..."
@@ -83,13 +89,13 @@ WantedBy=multi-user.target
 EOF
 
 # Recharger et activer le service
-sudo systemctl daemon-reload
-sudo systemctl enable ArrosageAUTO.service
+sudo systemctl daemon-reload || handle_error
+sudo systemctl enable ArrosageAUTO.service || handle_error
 
 # Redémarrage du Raspberry Pi
 echo -e "${BBlue}[INFO]${Color_Off} Le Raspberry Pi va redémarrer..."
-sudo reboot now
+sudo reboot now || handle_error
 
 # Vérifier que tout fonctionne avec htop (optionnel)
 echo "Vérification des processus en cours..."
-htop
+htop || handle_error
