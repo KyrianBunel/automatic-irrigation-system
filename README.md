@@ -34,9 +34,7 @@ open-source automatic irrigation system based on raspberryPi
 - connect to the Raspberry Pi with SSH and enter the folowing commands to donwload the setup file and execute it
 
         curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/setup.sh
-
         chmod +x setup.sh
-
         sudo ./setup.sh
 
 # Additional material required :
