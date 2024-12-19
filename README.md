@@ -29,7 +29,12 @@ open-source automatic irrigation system based on raspberryPi
 - select the raspberryPI you are using and go Operating System -> Raspberry PI OS (other) and select Raspberry Pi OS Lite (64-bit)
 - Press Ctrl + shift + X and enable SSH
 - Press Next to flash the sd card
-- 
+- Connect an Ethernet cable and the power supply to the Raspberry Pi
+- Wait about a minute for the Raspberry Pi to boot up, then use software like Advanced IP Scanner to find the Raspberry Pi's IP address
+- connect to the Raspberry Pi with SSH and enter the folowing commands to donwload the setup file and execute it
+        curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/setup.sh
+        chmod +x setup.sh
+        sudo ./setup.sh
 
 # Additional material required :
 If you whant the full experience you will need extra parts :
