@@ -33,7 +33,7 @@ open-source automatic irrigation system based on raspberryPi
 - Wait about a minute for the Raspberry Pi to boot up, then use software like Advanced IP Scanner to find the Raspberry Pi's IP address
 - connect to the Raspberry Pi with SSH and enter the folowing commands to donwload the setup file and execute it
 
-        curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/blob/main/setup.sh
+        curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/setup.sh -o /home/pi/setup.sh
         chmod +x setup.sh
         sudo ./setup.sh
 
