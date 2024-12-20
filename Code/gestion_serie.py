@@ -24,7 +24,7 @@ port = 1883
 
 def main():
     # Modèle pour extraire les valeurs
-    pattern = r"Temp: ([\d.]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, Batt: ([\d.]+)V"
+    pattern = r"Temp: ([\d.-]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, Batt: ([\d.]+)V(?:,.*)?"
 
     while True:
         try:
