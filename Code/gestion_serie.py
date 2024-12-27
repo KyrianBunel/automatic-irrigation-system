@@ -28,10 +28,26 @@ def main():
     pattern = r"Temp: ([\d.-]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, Rain ([\d.]+)mm, Batt: ([\d.]+)V(?:,.*)?"
     while True:
         try:
-            if not ser.is_open:
-                # Initialisation du port série
-                with serial.Serial(USB_PORT, BAUD_RATE, timeout=1) as ser:
-                    logger.info(f"{datetime.now()}: Liaison série ouverte sur {USB_PORT} à {BAUD_RATE} bauds.")
+            ser = serial.Serial(USB_PORT, BAUD_RATE, timeout=1)
+            print("Port série initialisé :", ser)
+
+            if ser.is_open:
+                print("Le port série est ouvert.")
+        
+                # Vérifiez si in_waiting est utilisable
+                try:
+                    if ser.in_waiting > 0:
+                        print("Des données sont disponibles.")
+                except Exception as e:
+                    print("Erreur lors de l'accès à in_waiting :", e)
+        except serial.SerialException as e:
+            print("Erreur avec le port série :", e)
+            logger.critical(f"{datetime.now()}: Erreur série : {e}")
+            logger.critical("Réinitialisation du port série...")
+            time.sleep(2)  # Attendre avant de réessayer
+
+        try:
+            logger.info(f"{datetime.now()}: Liaison série ouverte sur {USB_PORT} à {BAUD_RATE} bauds.")
             
             if ser.in_waiting > 0:  # Vérifie si des données sont disponibles
                 ligne = ser.readline().decode('utf-8', errors='ignore').strip()
@@ -90,10 +106,6 @@ def main():
                     logger.error(ligne)
 
             time.sleep(0.1)
-        except serial.SerialException as e:
-            logger.critical(f"{datetime.now()}: Erreur série : {e}")
-            logger.critical("Réinitialisation du port série...")
-            time.sleep(2)  # Attendre avant de réessayer
         except OSError as e:
             logger.critical(f"{datetime.now()}: Erreur d'entrée/sortie : {e}")
             logger.critical("Redémarrage du périphérique...")
@@ -104,4 +116,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
