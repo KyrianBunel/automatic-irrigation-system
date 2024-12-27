@@ -28,84 +28,71 @@ def main():
     pattern = r"Temp: ([\d.-]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, Rain ([\d.]+)mm, Batt: ([\d.]+)V(?:,.*)?"
     while True:
         try:
-            ser = serial.Serial(USB_PORT, BAUD_RATE, timeout=1)
-            print("Port série initialisé :", ser)
+            # Initialisation du port série
+            with serial.Serial(USB_PORT, BAUD_RATE, timeout=1) as ser:
+                logger.info(f"{datetime.now()}: Liaison série ouverte sur {USB_PORT} à {BAUD_RATE} bauds.")
+                while True:
+                    if ser.in_waiting > 0:  # Vérifie si des données sont disponibles
+                        ligne = ser.readline().decode('utf-8', errors='ignore').strip()
+                        # Rechercher dans la chaîne
+                        match = re.search(pattern, ligne)
 
-            if ser.is_open:
-                print("Le port série est ouvert.")
-        
-                # Vérifiez si in_waiting est utilisable
-                try:
-                    if ser.in_waiting > 0:
-                        print("Des données sont disponibles.")
-                except Exception as e:
-                    print("Erreur lors de l'accès à in_waiting :", e)
+                        if match:
+                            # Extraire les valeurs correspondantes et les convertir en float
+                            temperature = float(match.group(1))
+                            humidite = float(match.group(2))
+                            pression = float(match.group(3))
+                            luminosite = float(match.group(4))
+                            rain = float(match.group(5))
+                            Vbatt = float(match.group(6))
+
+                            # Estimation du pourcentage batterie
+                            x_data = np.array([0, 5, 15, 30, 40, 50, 60, 70, 80, 90, 100])
+                            y_data = np.array([3.3, 3.6, 3.7, 3.75, 3.79, 3.83, 3.87, 3.92, 3.97, 4.1, 4.24])
+                            spline = si.CubicSpline(x_data, y_data)
+
+                            def g(x):
+                                return spline(x) - Vbatt
+
+                            x_min, x_max = 0, 100
+
+                            solution = brentq(g, x_min, x_max)
+                            Pbatt = int(solution)  # Convertir en pourcentage entier
+
+                            # Afficher les résultats
+                            logger.debug(f"{datetime.now()}: Données envoyées avec succes")
+                            #logger.debug(f"Température : {temperature} °C")
+                            #logger.debug(f"Humidité : {humidite} %")
+                            #logger.debug(f"Pression : {pression} hPa")
+                            #logger.debug(f"Luminosité : {luminosite} Lux")
+                            logger.debug(f"Batterie : {Vbatt}V ({Pbatt})%")
+
+                            # Créer un client MQTT et publier les variables
+                            client = mqtt.Client()
+                            client.connect(broker, port, 60)
+                            client.publish("Temp", temperature)
+                            time.sleep(0.2)
+                            client.publish("Hum", humidite)
+                            time.sleep(0.2)
+                            client.publish("Press", pression)
+                            time.sleep(0.2)
+                            client.publish("Lum", luminosite)
+                            time.sleep(0.2)
+                            client.publish("Rain", rain)
+                            time.sleep(0.2)
+                            client.publish("Batt", Vbatt)
+                            time.sleep(0.2)
+                            client.publish("BattP", Pbatt)
+                            client.disconnect()
+                        else:
+                            logger.error(f"{datetime.now()}: Impossible d'extraire les données")
+                            logger.error(ligne)
+
+                    time.sleep(0.1)
         except serial.SerialException as e:
-            print("Erreur avec le port série :", e)
             logger.critical(f"{datetime.now()}: Erreur série : {e}")
             logger.critical("Réinitialisation du port série...")
             time.sleep(2)  # Attendre avant de réessayer
-
-        try:
-            logger.info(f"{datetime.now()}: Liaison série ouverte sur {USB_PORT} à {BAUD_RATE} bauds.")
-            
-            if ser.in_waiting > 0:  # Vérifie si des données sont disponibles
-                ligne = ser.readline().decode('utf-8', errors='ignore').strip()
-                # Rechercher dans la chaîne
-                match = re.search(pattern, ligne)
-
-                if match:
-                    # Extraire les valeurs correspondantes et les convertir en float
-                    temperature = float(match.group(1))
-                    humidite = float(match.group(2))
-                    pression = float(match.group(3))
-                    luminosite = float(match.group(4))
-                    rain = float(match.group(5))
-                    Vbatt = float(match.group(6))
-
-                    # Estimation du pourcentage batterie
-                    x_data = np.array([0, 5, 15, 30, 40, 50, 60, 70, 80, 90, 100])
-                    y_data = np.array([3.3, 3.6, 3.7, 3.75, 3.79, 3.83, 3.87, 3.92, 3.97, 4.1, 4.24])
-                    spline = si.CubicSpline(x_data, y_data)
-
-                    def g(x):
-                        return spline(x) - Vbatt
-
-                    x_min, x_max = 0, 100
-
-                    solution = brentq(g, x_min, x_max)
-                    Pbatt = int(solution)  # Convertir en pourcentage entier
-
-                    # Afficher les résultats
-                    logger.debug(f"{datetime.now()}: Données envoyées avec succes")
-                    #logger.debug(f"Température : {temperature} °C")
-                    #logger.debug(f"Humidité : {humidite} %")
-                    #logger.debug(f"Pression : {pression} hPa")
-                    #logger.debug(f"Luminosité : {luminosite} Lux")
-                    logger.debug(f"Batterie : {Vbatt}V ({Pbatt})%")
-
-                    # Créer un client MQTT et publier les variables
-                    client = mqtt.Client()
-                    client.connect(broker, port, 60)
-                    client.publish("Temp", temperature)
-                    time.sleep(0.2)
-                    client.publish("Hum", humidite)
-                    time.sleep(0.2)
-                    client.publish("Press", pression)
-                    time.sleep(0.2)
-                    client.publish("Lum", luminosite)
-                    time.sleep(0.2)
-                    client.publish("Rain", rain)
-                    time.sleep(0.2)
-                    client.publish("Batt", Vbatt)
-                    time.sleep(0.2)
-                    client.publish("BattP", Pbatt)
-                    client.disconnect()
-                else:
-                    logger.error(f"{datetime.now()}: Impossible d'extraire les données")
-                    logger.error(ligne)
-
-            time.sleep(0.1)
         except OSError as e:
             logger.critical(f"{datetime.now()}: Erreur d'entrée/sortie : {e}")
             logger.critical("Redémarrage du périphérique...")
@@ -116,3 +103,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
