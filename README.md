@@ -22,7 +22,8 @@ open-source automatic irrigation system based on raspberryPi
     - Dashboard page not fully working for now
 - Database 
     - Improve the data sent as the total duration of watering during the last hour to be able to deduct the cost of watering per month and per year
-
+- Add Mosquitto Mqtt server
+- Display datas with Graphana
 # How to start up :
 ### Home page & Dashboard
 - Open RaspberryPI imager and plug your micro sd card into your computer
