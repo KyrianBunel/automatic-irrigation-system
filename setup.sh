@@ -96,6 +96,6 @@ sudo systemctl enable ArrosageAUTO.service || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Le Raspberry Pi va redémarrer..."
 sudo reboot now || handle_error
 
-# Vérifier que tout fonctionne avec htop (optionnel)
+# Vérifier que tout fonctionne avec htop
 echo "Vérification des processus en cours..."
 htop || handle_error
