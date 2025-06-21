@@ -32,6 +32,17 @@ StrDebut1 = '00/00/0000'
 StrDebut2 = '00/00/0000'
 StrDebut3 = '00/00/0000'
 
+# Affichage Dashboard
+zone1_class = "rectangleON" if StrZone1 == "ON" else "rectangleOFF"
+zone1_text = "ON" if StrZone1 == "ON" else "OFF"
+
+zone2_class = "rectangleON" if StrZone2 == "ON" else "rectangleOFF"
+zone2_text = "ON" if StrZone2 == "ON" else "OFF"
+
+zone3_class = "rectangleON" if StrZone3 == "ON" else "rectangleOFF"
+zone3_text = "ON" if StrZone3 == "ON" else "OFF"
+
+
 def update_CSV():
     global mode, StrDuree, StrDateDebut, StrDateFin, StrRecurrence, StrZone1, StrZone2, StrZone3, StrDebut1, StrDebut2, StrDebut3  # Accéder aux variables globales
 
@@ -95,33 +106,45 @@ def prog():
 # Page Vanne1 (redirrection)
 @app.route('/Vanne1', methods=['GET', 'POST'])
 def Vanne1():
-    global vanne1  # Accéder aux variables globales
+    global vanne1, zone1_class, zone1_text  # Accéder aux variables globales
     if vanne1 == 0:
         vanne1 = 1
+        zone1_class = "rectangleON"
+        zone1_text = "ON"
     else:
         vanne1 = 0
+        zone1_class = "rectangleOFF"
+        zone1_text = "OFF"
     update_CSV()
     return redirect(url_for('accueil'), code=302)
 
 # Page Vanne2 (redirrection)
 @app.route('/Vanne2', methods=['GET', 'POST'])
 def Vanne2():
-    global vanne2  # Accéder aux variables globales
+    global vanne2, zone2_class, zone2_text  # Accéder aux variables globales
     if vanne2 == 0:
         vanne2 = 1
+        zone2_class = "rectangleON"
+        zone2_text = "ON"
     else:
         vanne2 = 0
+        zone2_class = "rectangleOFF"
+        zone2_text = "OFF"
     update_CSV()
     return redirect(url_for('accueil'), code=302)
 
 # Page Vanne3 (redirrection)
 @app.route('/Vanne3', methods=['GET', 'POST'])
 def Vanne3():
-    global vanne3  # Accéder aux variables globales
+    global vanne3, zone3_class, zone3_text  # Accéder aux variables globales
     if vanne3 == 0:
         vanne3 = 1
+        zone3_class = "rectangleON"
+        zone3_text = "ON"
     else:
         vanne3 = 0
+        zone3_class = "rectangleOFF"
+        zone3_text = "OFF"
     update_CSV()
     return redirect(url_for('accueil'), code=302)
 
@@ -915,13 +938,13 @@ def dashboard():
                         </table>
                     <h2>Etat des vannes</h2>
                     <p>Zone 1: </p>
-                    <div class="rectangleON">ON</div>
+                    <div class="{zone1_class}">{zone1_text}</div>
                     <p>Zone 2: </p>
-                    <div class="rectangleOFF">OFF</div>
+                    <div class="{zone2_class}">{zone2_text}</div>
                     <p>Zone 3: </p>
-                    <div class="rectangleOFF">OFF</div>
+                    <div class="{zone3_class}">{zone3_text}</div>
                     <p>Zone 4: </p>
-                    <div class="rectangleDISABLED">DISABLED</div>
+                    <div class="{zone4_class}">{zone4_text}</div>
                     <h2>Etat des capteurs</h2>
                     <p>Date locale: <span id="heure"></span></p>
                     <p>Heure locale: <span id="heure"></span></p>
