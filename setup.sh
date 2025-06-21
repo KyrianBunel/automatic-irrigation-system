@@ -50,6 +50,7 @@ cp /home/pi/Documents/ArrosageAUTO/flows.json flows_$(hostname).json || handle_e
 
 # Donner les permissions d'exécution aux fichiers Python
 echo "Modification des permissions des fichiers Python..."
+chmod +x /home/pi/Documents/ArrosageAUTO/start_arrosage.sh || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/gestion_serie.py || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
