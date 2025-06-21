@@ -76,9 +76,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/gestion_serie.py
-ExecStartPost=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py
-ExecStartPost=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py
+ExecStart=/home/pi/Documents/ArrosageAUTO/start_arrosage.sh
 WorkingDirectory=/home/pi
 User=pi
 Group=pi
