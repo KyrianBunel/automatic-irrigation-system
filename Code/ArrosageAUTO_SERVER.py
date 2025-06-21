@@ -938,13 +938,13 @@ def dashboard():
                         </table>
                     <h2>Etat des vannes</h2>
                     <p>Zone 1: </p>
-                    <div class="{zone1_class}">{zone1_text}</div>
+                    <div class="{{zone1_class}}">{{zone1_text}}</div>
                     <p>Zone 2: </p>
-                    <div class="{zone2_class}">{zone2_text}</div>
+                    <div class="{{zone2_class}}">{{zone2_text}}</div>
                     <p>Zone 3: </p>
-                    <div class="{zone3_class}">{zone3_text}</div>
+                    <div class="{{zone3_class}}">{{zone3_text}}</div>
                     <p>Zone 4: </p>
-                    <div class="{zone4_class}">{zone4_text}</div>
+                    <div class="{{zone4_class}}">{{zone4_text}}</div>
                     <h2>Etat des capteurs</h2>
                     <p>Date locale: <span id="heure"></span></p>
                     <p>Heure locale: <span id="heure"></span></p>
@@ -957,7 +957,7 @@ def dashboard():
                 </div>
             </div>
         </body>
-        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence)
+        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text)
 
 if __name__ == '__main__':
     # Lancement du serveur Flask
