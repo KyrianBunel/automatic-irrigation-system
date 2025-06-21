@@ -61,17 +61,10 @@ Vanne3 = '0'
 def update_time():
     global current_dateTime, current_hour, current_min, current_sec, current_day, current_month, current_year
     current_dateTime = datetime.now()
-    current_hour = int(current_dateTime.hour)
-    if current_hour == 23:
-        current_hour = 0
-    else:
-        current_hour = int(current_dateTime.hour)+1
+    current_hour = int(current_dateTime.hour)  # Supprimer l'ajout de +1
     current_min = int(current_dateTime.minute)
     current_sec = int(current_dateTime.second)
-    if current_hour != 0:
-        current_day = int(current_dateTime.day)
-    else:
-        current_day = int(current_dateTime.day)+1
+    current_day = int(current_dateTime.day)
     current_month = int(current_dateTime.month)
     current_year = int(current_dateTime.year)
     return 0
