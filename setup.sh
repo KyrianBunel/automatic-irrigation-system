@@ -30,6 +30,8 @@ echo -e "${BBlue}[INFO]${Color_Off} Création des répertoires pour ArrosageAUTO
 mkdir -p /home/pi/Documents/ArrosageAUTO || handle_error
 
 # Téléchargement des fichiers depuis GitHub
+echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier start_arrosage.sh depuis GitHub..."
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/data.csv -o /home/pi/Documents/ArrosageAUTO/data.csv || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO.py depuis GitHub..."
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO_SERVER.py depuis GitHub..."
