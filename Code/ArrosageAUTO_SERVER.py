@@ -774,7 +774,7 @@ def dashboard():
         </html>''')
 
     else :
-        global HTMLtabl
+        global HTMLtabl, current_year, current_month
         HTMLtabl = "<h2>Planning d'arrosage</h2> <table> <thead><tr> <th>Lun</th> <th>Mar</th> <th>Mer</th> <th>Jeu</th> <th>Ven</th> <th>Sam</th> <th>Dim</th> </tr> </thead> <tbody>"
         tablDay = 1
         offset = 1
