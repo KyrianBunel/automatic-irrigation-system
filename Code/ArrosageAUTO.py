@@ -118,28 +118,6 @@ def eteindre_vanne(num_vanne):
     return 0
 
 
-def calculerPremierJour(annee, mois): #calculer le premier jour du mois
-    a = (14 - mois) / 12
-    y = annee - a
-    m = mois + 12 * a - 2
-    jour = (1 + y + y / 4 - y / 100 + y / 400 + (31 * m) / 12) % 7
-    jour = jour -1
-    return jour # Retourne le jour
-
-
-def getNumberOfDays(year, month): # Calculer le nombre de jours dans le mois
-    if month == 1 or month == 3 or month == 5 or month == 7 or month == 8 or month == 10 or month == 12:
-        return 31
-    elif month == 4 or month == 6 or month == 9 or month == 11:
-        return 30
-    elif month == 2:
-        if (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:
-            return 29 # Année bissextile
-        else:
-            return 28
-    else:
-        return 0 #Mois invalide
-
 def get_data():
     global duree, StrDateDebut, StrDateFin, recurrence, StrZone1, StrZone2, StrZone3
     global StrDebut1, StrDebut2, StrDebut3, bpVanne1, bpVanne2, bpVanne3, mode, StartDay, StartMonth, StartYear, HeureDebut1, MinDebut1, HeureDebut2, MinDebut2, HeureDebut3, MinDebut3, EndMin1, EndHour1, EndMin2, EndHour2, EndMin3, EndHour3

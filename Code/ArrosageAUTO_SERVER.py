@@ -45,24 +45,15 @@ zone3_text = "ON" if StrZone3 == "ON" else "OFF"
 
 HTMLtabl = ""
 
-def update_time():
-    global current_dateTime, current_hour, current_min, current_sec, current_day, current_month, current_year
-    current_dateTime = datetime.now()
-    current_hour = int(current_dateTime.hour)  # Supprimer l'ajout de +1
-    current_min = int(current_dateTime.minute)
-    current_sec = int(current_dateTime.second)
-    current_day = int(current_dateTime.day)
-    current_month = int(current_dateTime.month)
-    current_year = int(current_dateTime.year)
-    return 0
-
-def calculerPremierJour(annee, mois): #calculer le premier jour du mois
-    a = (14 - mois) / 12
+def calculerPremierJour(annee, mois):
+    a = (14 - mois) // 12
     y = annee - a
     m = mois + 12 * a - 2
-    jour = (1 + y + y / 4 - y / 100 + y / 400 + (31 * m) / 12) % 7
-    jour = jour -1
-    return jour # Retourne le jour
+    jour = (1 + y + y // 4 - y // 100 + y // 400 + (31 * m) // 12) % 7
+    # Si tu veux que 0 = dimanche, 1 = lundi, ... 
+    # et que ton résultat ne soit jamais négatif, fais :
+    return (jour - 1) % 7
+
 
 def getNumberOfDays(year, month): # Calculer le nombre de jours dans le mois
     if month == 1 or month == 3 or month == 5 or month == 7 or month == 8 or month == 10 or month == 12:
@@ -683,98 +674,9 @@ def accueil():
 # Page dashboard
 @app.route('/dashboard')
 def dashboard():
-    if mode == 'PROG' and (StrDateDebut == '0000/00/00' or StrDateFin == '0000/00/00' or StrDuree == '0' or StrRecurrence == '0'):
-        return render_template_string('''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <link rel='icon' type='image/png' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
-            <link rel='apple-touch-icon' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Dashboard</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f2f2f2;
-                    margin: 0;
-                    padding: 0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-
-                .container {
-                    width: 90%;
-                    max-width: 700px;
-                    min-height: 100vh;
-                }
-
-                .card {
-                    background-color: #fff;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    padding: 20px;
-                    margin: 0 auto;
-                    max-width: 700px;
-                    border: 1px solid black;
-                }
-
-                h1 {
-                    font-size: 36px;
-                    margin-bottom: 25px; 
-                    color: #4CAF50; 
-                    text-align: center; 
-                    font-weight: 700 ;
-                }
-                h2 {
-                    font-size: 18px;
-                    margin-bottom: 20px;
-                    color: #333;
-                    text-align: center;
-                }
-
-                h3 {
-                    font-size: 24px;
-                    margin-bottom: 20px;
-                    color: #ff0000;
-                    text-align: center;
-                }
-
-                p {
-                    font-size: 18px;
-                    margin-bottom: 20px;
-                    color: #666;
-                }
-                .footer p {
-                    text-align: center; 
-                    margin-top: 20px;
-                    font-size: 14px;
-                }
-
-            </style>
-
-            <script src='https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js'></script>
-
-            <body>
-            <div class='container'>
-                <h1>Tableau de bord</h1>
-                <div class='card'>
-                    <h3>Erreur</h3>
-                    <h2>Aucun programme enregistré</h2>
-                    <p>Pour créer votre premier programme: <a href='http://192.168.1.30:5000'>Cliquez ici</a></p>
-                    <lottie-player src='https://assets5.lottiefiles.com/packages/lf20_zsLhI1gTMs.json'  background='transparent'  speed='0.7'  style='width: 300px; margin: 0 auto; height: 300px;'  loop  autoplay></lottie-player></head>
-                </div>
-            <div class='footer'>
-                <p style='font-size: 14px;'>Développé par Kyrian BUNEL - 2023</p>
-            </div>
-            </div>
-        </body>
-        </html>''')
-
-    else :
-        global HTMLtabl
+    global StrDateDebut, StrDateFin, StrDuree, StrRecurrence, StrZone1, StrZone2, StrZone3
+    if mode == 'PROG' and StrDateDebut != "0000/00/00" and StrDateFin != "0000/00/00" and StrDuree != "0" and StrRecurrence != "0":
+        global HTMLtabl, zone1_class, zone1_text, zone2_class, zone2_text, zone3_class, zone3_text
         HTMLtabl = "<h2>Planning d'arrosage</h2> <table> <thead><tr> <th>Lun</th> <th>Mar</th> <th>Mer</th> <th>Jeu</th> <th>Ven</th> <th>Sam</th> <th>Dim</th> </tr> </thead> <tbody>"
         tablDay = 1
         offset = 1
@@ -782,7 +684,6 @@ def dashboard():
         current_month = datetime.now().month
         PremierJour = calculerPremierJour(current_year, current_month)
         NumberOfDays = getNumberOfDays(current_year, current_month)
-
         if PremierJour == 6 and NumberOfDays == 30:
             MaxIter = 7
         else :
@@ -802,6 +703,19 @@ def dashboard():
                     tablDay += 1
                 offset += 1
             HTMLtabl += "</tr>"
+
+        zone1_class = "rectangleON" if StrZone1 == "on" else "rectangleDISABLED"
+        zone1_text = "ON" if StrZone1 == "on" else "DÉSACTIVÉE"
+
+        zone2_class = "rectangleON" if StrZone2 == "on" else "rectangleDISABLED"
+        zone2_text = "ON" if StrZone2 == "on" else "DÉSACTIVÉE"
+
+        zone3_class = "rectangleON" if StrZone3 == "on" else "rectangleDISABLED"
+        zone3_text = "ON" if StrZone3 == "on" else "DÉSACTIVÉE"
+        
+        print(StrZone1)
+        print(StrZone2)
+        print(StrZone3)
 
         return render_template_string('''
         <!DOCTYPE html>
@@ -938,7 +852,7 @@ def dashboard():
                     <p>Date de fin: {{StrDateFin}}</p>
                     <p>Durée d'arrosage: {{StrDuree}} min</p>
                     <p>Récurrence: {{StrRecurrence}} jours</p>
-                    {{HTMLtabl}}
+                    {{HTMLtabl | safe}}
                             </tbody>
                         </table>
                     <h2>Etat des vannes</h2>
@@ -948,8 +862,6 @@ def dashboard():
                     <div class="{{zone2_class}}">{{zone2_text}}</div>
                     <p>Zone 3: </p>
                     <div class="{{zone3_class}}">{{zone3_text}}</div>
-                    <p>Zone 4: </p>
-                    <div class="{{zone4_class}}">{{zone4_text}}</div>
                     <h2>Etat des capteurs</h2>
                     <p>Date locale: <span id="heure"></span></p>
                     <p>Heure locale: <span id="heure"></span></p>
@@ -963,7 +875,249 @@ def dashboard():
             </div>
         </body>
         </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text, HTMLtabl=HTMLtabl)
+    
+    elif mode == 'MANU':
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <link rel="icon" type="image/png" href="https://img.freepik.com/free-icon/pie-chart_318-372376.jpg">
+            <link rel="apple-touch-icon" href="https://img.freepik.com/free-icon/pie-chart_318-372376.jpg">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <!--meta http-equiv="refresh" content="1"-->
+            <title>Dashboard</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f2f2f2;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
 
+                .rectangleON {
+                    width: 150px;
+                    height: 30px;
+                    background-color: #4CAF50;
+                    text-align: center;
+                    line-height: 30px;
+                    font-family: Arial, sans-serif;
+                    color: white;
+                }
+
+                .rectangleOFF {
+                    width: 150px;
+                    height: 30px;
+                    background-color: #ff0d00;
+                    text-align: center;
+                    line-height: 30px;
+                    font-family: Arial, sans-serif;
+                    color: white;
+                }
+
+                .rectangleDISABLED {
+                    width: 150px;
+                    height: 30px;
+                    background-color: #860063;
+                    text-align: center;
+                    line-height: 30px;
+                    font-family: Arial, sans-serif;
+                    color: white;
+                }
+
+                .container {
+                    width: 90%;
+                    max-width: 700px;
+                    min-height: 100vh;
+                }
+
+                .card {
+                    background-color: #fff;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    margin: 0 auto;
+                    max-width: 700px;
+                    border: 1px solid black;
+                }
+
+
+                h1 {
+                    font-size: 36px;
+                    margin-bottom: 25px; 
+                    color: #4CAF50; 
+                    text-align: center; 
+                    font-weight: 700 ;
+                }
+                h2 {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #333;
+                    text-align: center;
+                }
+
+                p {
+                    font-size: 18px;
+                    margin-bottom: 10px;
+                    color: #666;
+                }
+
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }
+
+                th, td {
+                    text-align: center;
+                    padding: 8px;
+                }
+
+                th {
+                    background-color: #333;
+                    color: white;
+                }
+
+                td {
+                    border: 1px solid #ddd;
+                }
+
+                .today {
+                    background-color: #4CAF50;
+                    color: white;
+                }
+
+                .footer p {
+                    text-align: center; 
+                    margin-top: 20px;
+                    font-size: 14px;
+                }
+
+                .highlight {
+                    background-color: #4CAF50;
+                    color: white;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Tableau de bord</h1>
+                <div class="card">
+                    <h2>Etat des vannes</h2>
+                    <p>Zone 1: </p>
+                    <div class="{{zone1_class}}">{{zone1_text}}</div>
+                    <p>Zone 2: </p>
+                    <div class="{{zone2_class}}">{{zone2_text}}</div>
+                    <p>Zone 3: </p>
+                    <div class="{{zone3_class}}">{{zone3_text}}</div>
+                    <h2>Etat des capteurs</h2>
+                    <p>Date locale: <span id="heure"></span></p>
+                    <p>Heure locale: <span id="heure"></span></p>
+                    <p>Débit mesuré: <span id="debit"></span></p>
+                    <p>Valeur capteur de pluie: <span id="capteurPluie"></span></p>
+                    <p>Utilisation de la mémoire: <span id="capteurPluie"></span></p>
+                </div>
+                <div class="footer">
+                    <p style="font-size: 14px;">Développé par Kyrian BUNEL - 2023</p>
+                </div>
+            </div>
+        </body>
+        </html>''', zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text)
+    
+    else :
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <link rel='icon' type='image/png' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
+            <link rel='apple-touch-icon' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Dashboard</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f2f2f2;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                .container {
+                    width: 90%;
+                    max-width: 700px;
+                    min-height: 100vh;
+                }
+
+                .card {
+                    background-color: #fff;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    margin: 0 auto;
+                    max-width: 700px;
+                    border: 1px solid black;
+                }
+
+                h1 {
+                    font-size: 36px;
+                    margin-bottom: 25px; 
+                    color: #4CAF50; 
+                    text-align: center; 
+                    font-weight: 700 ;
+                }
+                h2 {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #333;
+                    text-align: center;
+                }
+
+                h3 {
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                    color: #ff0000;
+                    text-align: center;
+                }
+
+                p {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #666;
+                }
+                .footer p {
+                    text-align: center; 
+                    margin-top: 20px;
+                    font-size: 14px;
+                }
+
+            </style>
+
+            <script src='https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js'></script>
+
+            <body>
+            <div class='container'>
+                <h1>Tableau de bord</h1>
+                <div class='card'>
+                    <h3>Erreur</h3>
+                    <h2>Aucun programme enregistré</h2>
+                    <p>Pour créer votre premier programme: <a href='http://192.168.1.30:5000'>Cliquez ici</a></p>
+                    <lottie-player src='https://assets5.lottiefiles.com/packages/lf20_zsLhI1gTMs.json'  background='transparent'  speed='0.7'  style='width: 300px; margin: 0 auto; height: 300px;'  loop  autoplay></lottie-player></head>
+                </div>
+            <div class='footer'>
+                <p style='font-size: 14px;'>Développé par Kyrian BUNEL - 2023</p>
+            </div>
+            </div>
+        </body>
+        </html>''')
+        
 if __name__ == '__main__':
     # Lancement du serveur Flask
     app.run(host='0.0.0.0')
