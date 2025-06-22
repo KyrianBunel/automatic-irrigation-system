@@ -774,11 +774,12 @@ def dashboard():
         </html>''')
 
     else :
-        global HTMLtabl, current_year, current_month
-        update_time()
+        global HTMLtabl
         HTMLtabl = "<h2>Planning d'arrosage</h2> <table> <thead><tr> <th>Lun</th> <th>Mar</th> <th>Mer</th> <th>Jeu</th> <th>Ven</th> <th>Sam</th> <th>Dim</th> </tr> </thead> <tbody>"
         tablDay = 1
         offset = 1
+        current_year = datetime.now().year
+        current_month = datetime.now().month
         PremierJour = calculerPremierJour(current_year, current_month)
         NumberOfDays = getNumberOfDays(current_year, current_month)
 
