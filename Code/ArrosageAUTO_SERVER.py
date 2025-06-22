@@ -1,6 +1,7 @@
 from flask import Flask,redirect, url_for,request, render_template_string
 from gpiozero import CPUTemperature
 import threading
+from datetime import datetime
 import csv
 
 app = Flask(__name__)
@@ -42,11 +43,44 @@ zone2_text = "ON" if StrZone2 == "ON" else "OFF"
 zone3_class = "rectangleON" if StrZone3 == "ON" else "rectangleOFF"
 zone3_text = "ON" if StrZone3 == "ON" else "OFF"
 
+HTMLtabl = ""
+
+def update_time():
+    global current_dateTime, current_hour, current_min, current_sec, current_day, current_month, current_year
+    current_dateTime = datetime.now()
+    current_hour = int(current_dateTime.hour)  # Supprimer l'ajout de +1
+    current_min = int(current_dateTime.minute)
+    current_sec = int(current_dateTime.second)
+    current_day = int(current_dateTime.day)
+    current_month = int(current_dateTime.month)
+    current_year = int(current_dateTime.year)
+    return 0
+
+def calculerPremierJour(annee, mois): #calculer le premier jour du mois
+    a = (14 - mois) / 12
+    y = annee - a
+    m = mois + 12 * a - 2
+    jour = (1 + y + y / 4 - y / 100 + y / 400 + (31 * m) / 12) % 7
+    jour = jour -1
+    return jour # Retourne le jour
+
+def getNumberOfDays(year, month): # Calculer le nombre de jours dans le mois
+    if month == 1 or month == 3 or month == 5 or month == 7 or month == 8 or month == 10 or month == 12:
+        return 31
+    elif month == 4 or month == 6 or month == 9 or month == 11:
+        return 30
+    elif month == 2:
+        if (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:
+            return 29 # Année bissextile
+        else:
+            return 28
+    else:
+        return 0 #Mois invalide
 
 def update_CSV():
     global mode, StrDuree, StrDateDebut, StrDateFin, StrRecurrence, StrZone1, StrZone2, StrZone3, StrDebut1, StrDebut2, StrDebut3  # Accéder aux variables globales
 
-#####------------------------------------- Gestion du CSV ---------------->
+    #####------------------------------------- Gestion du CSV ---------------->
     data = [
         ["StrDuree", StrDuree],
         ["StrDateDebut", StrDateDebut],
@@ -652,94 +686,121 @@ def dashboard():
     if mode == 'PROG' and (StrDateDebut == '0000/00/00' or StrDateFin == '0000/00/00' or StrDuree == '0' or StrRecurrence == '0'):
         return render_template_string('''
         <!DOCTYPE html>
-<html>
-<head>
-    <link rel='icon' type='image/png' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
-    <link rel='apple-touch-icon' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        <html>
+        <head>
+            <link rel='icon' type='image/png' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
+            <link rel='apple-touch-icon' href='https://img.freepik.com/free-icon/pie-chart_318-372376.jpg'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Dashboard</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f2f2f2;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
 
-        .container {
-            width: 90%;
-            max-width: 700px;
-            min-height: 100vh;
-        }
+                .container {
+                    width: 90%;
+                    max-width: 700px;
+                    min-height: 100vh;
+                }
 
-        .card {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin: 0 auto;
-            max-width: 700px;
-            border: 1px solid black;
-        }
+                .card {
+                    background-color: #fff;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    margin: 0 auto;
+                    max-width: 700px;
+                    border: 1px solid black;
+                }
 
-        h1 {
-            font-size: 36px;
-            margin-bottom: 25px; 
-            color: #4CAF50; 
-            text-align: center; 
-            font-weight: 700 ;
-        }
-        h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #333;
-            text-align: center;
-        }
+                h1 {
+                    font-size: 36px;
+                    margin-bottom: 25px; 
+                    color: #4CAF50; 
+                    text-align: center; 
+                    font-weight: 700 ;
+                }
+                h2 {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #333;
+                    text-align: center;
+                }
 
-        h3 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #ff0000;
-            text-align: center;
-        }
+                h3 {
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                    color: #ff0000;
+                    text-align: center;
+                }
 
-        p {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #666;
-        }
-        .footer p {
-            text-align: center; 
-            margin-top: 20px;
-            font-size: 14px;
-        }
+                p {
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                    color: #666;
+                }
+                .footer p {
+                    text-align: center; 
+                    margin-top: 20px;
+                    font-size: 14px;
+                }
 
-    </style>
+            </style>
 
-    <script src='https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js'></script>
+            <script src='https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js'></script>
 
-    <body>
-    <div class='container'>
-        <h1>Tableau de bord</h1>
-        <div class='card'>
-            <h3>Erreur</h3>
-            <h2>Aucun programme enregistré</h2>
-            <p>Pour créer votre premier programme: <a href='http://192.168.1.30:5000'>Cliquez ici</a></p>
-            <lottie-player src='https://assets5.lottiefiles.com/packages/lf20_zsLhI1gTMs.json'  background='transparent'  speed='0.7'  style='width: 300px; margin: 0 auto; height: 300px;'  loop  autoplay></lottie-player></head>
-        </div>
-    <div class='footer'>
-        <p style='font-size: 14px;'>Développé par Kyrian BUNEL - 2023</p>
-    </div>
-    </div>
-</body>
-</html>''')
+            <body>
+            <div class='container'>
+                <h1>Tableau de bord</h1>
+                <div class='card'>
+                    <h3>Erreur</h3>
+                    <h2>Aucun programme enregistré</h2>
+                    <p>Pour créer votre premier programme: <a href='http://192.168.1.30:5000'>Cliquez ici</a></p>
+                    <lottie-player src='https://assets5.lottiefiles.com/packages/lf20_zsLhI1gTMs.json'  background='transparent'  speed='0.7'  style='width: 300px; margin: 0 auto; height: 300px;'  loop  autoplay></lottie-player></head>
+                </div>
+            <div class='footer'>
+                <p style='font-size: 14px;'>Développé par Kyrian BUNEL - 2023</p>
+            </div>
+            </div>
+        </body>
+        </html>''')
 
     else :
+        global HTMLtabl
+        HTMLtabl = "<h2>Planning d'arrosage</h2> <table> <thead><tr> <th>Lun</th> <th>Mar</th> <th>Mer</th> <th>Jeu</th> <th>Ven</th> <th>Sam</th> <th>Dim</th> </tr> </thead> <tbody>"
+        tablDay = 1
+        offset = 1
+        PremierJour = calculerPremierJour(current_year, current_month)
+        NumberOfDays = getNumberOfDays(current_year, current_month)
+
+        if PremierJour == 6 and NumberOfDays == 30:
+            MaxIter = 7
+        else :
+            MaxIter = 6
+
+        for a in range(1, MaxIter):
+            HTMLtabl += "<tr>"
+            for i in range(1, 8):  # 1 to 7
+                modulo = tablDay % int(StrRecurrence)
+                if PremierJour >= offset or tablDay > NumberOfDays:
+                    HTMLtabl += "<td></td>"
+                elif modulo == 0 and int(StrDateDebut[-2:]) <= tablDay <= int(StrDateFin[-2:]):
+                    HTMLtabl += f"<td class='highlight'>{tablDay}</td>"
+                    tablDay += 1
+                else:
+                    HTMLtabl += f"<td>{tablDay}</td>"
+                    tablDay += 1
+                offset += 1
+            HTMLtabl += "</tr>"
+
         return render_template_string('''
         <!DOCTYPE html>
         <html>
@@ -875,65 +936,7 @@ def dashboard():
                     <p>Date de fin: {{StrDateFin}}</p>
                     <p>Durée d'arrosage: {{StrDuree}} min</p>
                     <p>Récurrence: {{StrRecurrence}} jours</p>
-                    <h2>planning d'arrosage</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Lun</th>
-                                    <th>Mar</th>
-                                    <th>Mer</th>
-                                    <th>Jeu</th>
-                                    <th>Ven</th>
-                                    <th>Sam</th>
-                                    <th>Dim</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>1</td>
-                                    <td>2</td>
-                                </tr>
-                                <tr>
-                                    <td>3</td>
-                                    <td>4</td>
-                                    <td class="highlight">5</td>
-                                    <td>6</td>
-                                    <td>7</td>
-                                    <td>8</td>
-                                    <td>9</td>
-                                </tr>
-                                <tr>
-                                    <td>10</td>
-                                    <td>11</td>
-                                    <td>12</td>
-                                    <td>13</td>
-                                    <td>14</td>
-                                    <td>15</td>
-                                    <td>16</td>
-                                </tr>
-                                <tr>
-                                    <td>17</td>
-                                    <td>18</td>
-                                    <td>19</td>
-                                    <td>20</td>
-                                    <td>21</td>
-                                    <td>22</td>
-                                    <td>23</td>
-                                </tr>
-                                <tr>
-                                    <td>24</td>
-                                    <td>25</td>
-                                    <td>26</td>
-                                    <td>27</td>
-                                    <td>28</td>
-                                    <td>29</td>
-                                    <td>30</td>
-                                </tr>
+                    {{HTMLtabl}}
                             </tbody>
                         </table>
                     <h2>Etat des vannes</h2>
@@ -957,7 +960,7 @@ def dashboard():
                 </div>
             </div>
         </body>
-        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text)
+        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text, HTMLtabl=HTMLtabl)
 
 if __name__ == '__main__':
     # Lancement du serveur Flask
