@@ -30,8 +30,11 @@ StrZone1 = 0
 StrZone2 = 0
 StrZone3 = 0
 StrDebut1 = '00/00/0000'
+PlageZone1 = ''
 StrDebut2 = '00/00/0000'
+PlageZone2 = ''
 StrDebut3 = '00/00/0000'
+PlageZone3 = ''
 
 # Affichage Dashboard
 zone1_class = "rectangleON" if StrZone1 == "ON" else "rectangleOFF"
@@ -676,7 +679,7 @@ def accueil():
 def dashboard():
     global StrDateDebut, StrDateFin, StrDuree, StrRecurrence, StrZone1, StrZone2, StrZone3
     if mode == 'PROG' and StrDateDebut != "0000/00/00" and StrDateFin != "0000/00/00" and StrDuree != "0" and StrRecurrence != "0":
-        global HTMLtabl, zone1_class, zone1_text, zone2_class, zone2_text, zone3_class, zone3_text
+        global HTMLtabl, zone1_class, zone1_text, zone2_class, zone2_text, zone3_class, zone3_text, PlageZone1, PlageZone2, PlageZone3
         HTMLtabl = "<h2>Planning d'arrosage</h2> <table> <thead><tr> <th>Lun</th> <th>Mar</th> <th>Mer</th> <th>Jeu</th> <th>Ven</th> <th>Sam</th> <th>Dim</th> </tr> </thead> <tbody>"
         tablDay = 1
         offset = 1
@@ -704,6 +707,21 @@ def dashboard():
                 offset += 1
             HTMLtabl += "</tr>"
 
+        if StrZone1 == 'on':
+            PlageZone1 = StrDebut1 + ' -> ' + StrDebut1[:2] + ':' + str(int(StrDebut1[-2:]) + int(StrDuree))
+        else:
+            PlageZone1 = ''
+
+        if StrZone2 == 'on':
+            PlageZone2 = StrDebut2 + ' -> ' + StrDebut2[:2] + ':' + str(int(StrDebut2[-2:]) + int(StrDuree))
+        else:
+            PlageZone2 = ''
+
+        if StrZone3 == 'on':
+            PlageZone3 = StrDebut3 + ' -> ' + StrDebut3[:2] + ':' + str(int(StrDebut3[-2:]) + int(StrDuree))
+        else:
+            PlageZone3 = ''
+
         zone1_class = "rectangleON" if StrZone1 == "on" else "rectangleDISABLED"
         zone1_text = "ON" if StrZone1 == "on" else "DÉSACTIVÉE"
 
@@ -712,10 +730,6 @@ def dashboard():
 
         zone3_class = "rectangleON" if StrZone3 == "on" else "rectangleDISABLED"
         zone3_text = "ON" if StrZone3 == "on" else "DÉSACTIVÉE"
-        
-        print(StrZone1)
-        print(StrZone2)
-        print(StrZone3)
 
         return render_template_string('''
         <!DOCTYPE html>
@@ -856,11 +870,11 @@ def dashboard():
                             </tbody>
                         </table>
                     <h2>Etat des vannes</h2>
-                    <p>Zone 1: </p>
+                    <p>Zone 1: {{PlageZone1}}</p>
                     <div class="{{zone1_class}}">{{zone1_text}}</div>
-                    <p>Zone 2: </p>
+                    <p>Zone 2: {{PlageZone2}}</p>
                     <div class="{{zone2_class}}">{{zone2_text}}</div>
-                    <p>Zone 3: </p>
+                    <p>Zone 3: {{PlageZone3}}</p>
                     <div class="{{zone3_class}}">{{zone3_text}}</div>
                     <h2>Etat des capteurs</h2>
                     <p>Date locale: <span id="heure"></span></p>
@@ -874,7 +888,7 @@ def dashboard():
                 </div>
             </div>
         </body>
-        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text, HTMLtabl=HTMLtabl)
+        </html>''', StrDateDebut=StrDateDebut, StrDateFin=StrDateFin, StrDuree=StrDuree, StrRecurrence=StrRecurrence, zone1_class=zone1_class, zone1_text=zone1_text, zone2_class=zone2_class, zone2_text=zone2_text, zone3_class=zone3_class, zone3_text=zone3_text, HTMLtabl=HTMLtabl, PlageZone1=PlageZone1, PlageZone2=PlageZone2, PlageZone3=PlageZone3)
     
     elif mode == 'MANU':
         return render_template_string('''
