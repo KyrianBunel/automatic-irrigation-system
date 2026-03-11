@@ -79,17 +79,17 @@ echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service pour l'arros
 cat <<EOF > /etc/systemd/system/ArrosageAUTO.service
 [Unit]
 Description=Démarrage des services de l'arrosage automatique
-After=network.target
+After=network.target mosquitto.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/gestion_serie.py
-ExecStartPost=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py
-ExecStartPost=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py
-WorkingDirectory=/home/pi
+# Starting process
+ExecStart=/bin/bash /home/pi/Documents/ArrosageAUTO/start_arrosage.sh
+WorkingDirectory=/home/pi/Documents/ArrosageAUTO
 User=pi
 Group=pi
-Restart=on-failure
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
