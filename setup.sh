@@ -36,8 +36,6 @@ echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO_SER
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO_SERVER.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
 echo -e "Téléchargement du fichier gestion_serie.py depuis GitHub..."
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/gestion_serie.py -o /home/pi/Documents/ArrosageAUTO/gestion_serie.py || handle_error
-echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier data.csv depuis GitHub..."
-curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/data.csv -o /home/pi/Documents/ArrosageAUTO/data.csv || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier flows.json depuis GitHub..."
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/flows.json -o /home/pi/Documents/ArrosageAUTO/flows.json || handle_error
 echo -e "${BGreen}[DONE]${Color_Off} Fichiers téléchargés"
