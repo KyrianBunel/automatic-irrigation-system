@@ -68,11 +68,11 @@ sudo apt install python3-scipy -y || handle_error
 sudo apt install python3-matplotlib -y || handle_error
 sudo apt install python3-gpiozero -y || handle_error
 
-# Création du fichier de service pour l'arrosage automatique (Correction appliquée)
-echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service pour l'arrosage automatique..."
-sudo bash -c 'cat <<EOF > /etc/systemd/system/ArrosageAUTO.service
+# Création du fichier de service
+echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service..."
+sudo tee /etc/systemd/system/ArrosageAUTO.service > /dev/null <<'EOF'
 [Unit]
-Description=Démarrage des services de l\'arrosage automatique
+Description=Démarrage des services de l'arrosage automatique
 After=network.target mosquitto.service
 
 [Service]
@@ -86,7 +86,7 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-EOF'
+EOF
 
 # Recharger et activer le service
 sudo systemctl daemon-reload || handle_error
