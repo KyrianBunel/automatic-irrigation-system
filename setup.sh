@@ -128,7 +128,6 @@ EOF
 # Recharger et activer le service
 sudo systemctl daemon-reload || handle_error
 sudo systemctl enable ArrosageAUTO.service || handle_error
-sudo systemctl stop ArrosageAUTO.service || handle_error
 
 # Redémarrage du Raspberry Pi
 echo -e "${BBlue}[INFO]${Color_Off} Le Raspberry Pi va redémarrer..."
