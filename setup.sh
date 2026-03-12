@@ -105,15 +105,14 @@ sudo apt install python3-gpiozero -y || handle_error
 #sudo apt install python3-logging || handle_error
 
 # Création du fichier de service pour l'arrosage automatique
-echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service pour l'arrosage automatique..."
-cat <<EOF > /etc/systemd/system/ArrosageAUTO.service
+echo -e "${BBlue}[INFO]${Color_Off} Configuration du service Systemd..."
+sudo tee /etc/systemd/system/ArrosageAUTO.service > /dev/null <<'EOF'
 [Unit]
 Description=Démarrage des services de l'arrosage automatique
 After=network.target mosquitto.service
 
 [Service]
 Type=simple
-# Starting process
 ExecStart=/bin/bash /home/pi/Documents/ArrosageAUTO/start_arrosage.sh
 WorkingDirectory=/home/pi/Documents/ArrosageAUTO
 User=pi
@@ -124,7 +123,6 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
-
 # Recharger et activer le service
 sudo systemctl daemon-reload || handle_error
 sudo systemctl enable ArrosageAUTO.service || handle_error
