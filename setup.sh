@@ -44,6 +44,8 @@ sudo apt install -y mosquitto mosquitto-clients python3 python3-pip python3-flas
 python3-serial python3-paho-mqtt python3-numpy python3-scipy \
 python3-matplotlib python3-gpiozero python3-requests || handle_error
 
+sudo pip3 install ping3 || handle_error
+
 # Configuration Mosquitto
 sudo bash -c 'cat <<EOF > /etc/mosquitto/conf.d/external.conf
 listener 1883
