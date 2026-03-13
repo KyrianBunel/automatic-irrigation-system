@@ -42,9 +42,8 @@ chmod +x /home/pi/Documents/ArrosageAUTO/start_arrosage.sh
 echo -e "${BBlue}[INFO]${Color_Off} Installation des paquets nécessaires..."
 sudo apt install -y mosquitto mosquitto-clients python3 python3-pip python3-flask \
 python3-serial python3-paho-mqtt python3-numpy python3-scipy \
-python3-matplotlib python3-gpiozero python3-requests || handle_error
+python3-matplotlib python3-gpiozero python3-requests python3-ping3 || handle_error
 
-sudo pip3 install ping3 || handle_error
 
 # Configuration Mosquitto
 sudo bash -c 'cat <<EOF > /etc/mosquitto/conf.d/external.conf
