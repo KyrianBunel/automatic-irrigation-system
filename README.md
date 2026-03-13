@@ -36,7 +36,7 @@ open-source automatic irrigation system based on raspberryPi
 
         curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/setup.sh -o /home/pi/setup.sh
         chmod +x setup.sh
-        sudo ./setup.sh
+        ./setup.sh
 
 # Additional material required :
 If you whant the full experience you will need extra parts :
