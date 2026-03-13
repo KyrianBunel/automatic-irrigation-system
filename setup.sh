@@ -24,6 +24,8 @@ mkdir -p /home/pi/Documents/ArrosageAUTO || handle_error
 # Téléchargement des fichiers depuis GitHub
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO.py depuis GitHub..."
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
+echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier Supervisor.py depuis GitHub..."
+curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/Supervisor.py -o /home/pi/Documents/ArrosageAUTO/Supervisor.py || handle_error
 echo -e "${BBlue}[INFO]${Color_Off} Téléchargement du fichier ArrosageAUTO_SERVER.py depuis GitHub..."
 curl -f https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/Code/ArrosageAUTO_SERVER.py -o /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
 echo -e "Téléchargement du fichier gestion_serie.py depuis GitHub..."
@@ -43,6 +45,7 @@ EOF
 echo "Modification des permissions des fichiers..."
 chmod +x /home/pi/Documents/ArrosageAUTO/gestion_serie.py || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO_SERVER.py || handle_error
+chmod +x /home/pi/Documents/ArrosageAUTO/Supervisor.py || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/ArrosageAUTO.py || handle_error
 chmod +x /home/pi/Documents/ArrosageAUTO/start_arrosage.sh || handle_error
 
@@ -68,7 +71,7 @@ sudo apt install python3-scipy -y || handle_error
 sudo apt install python3-matplotlib -y || handle_error
 sudo apt install python3-gpiozero -y || handle_error
 
-# Création du fichier de service
+# Création du fichier de service Arrosage AUTO
 echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service..."
 sudo tee /etc/systemd/system/ArrosageAUTO.service > /dev/null <<'EOF'
 [Unit]
@@ -88,9 +91,34 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+# Création du fichier de service Supervisor
+echo -e "${BBlue}[INFO]${Color_Off} Création du fichier de service..."
+sudo tee /etc/systemd/system/Supervisor.service > /dev/null <<'EOF'
+[Unit]
+Description=Service de surveillance pour Arrosage
+After=network.target mosquitto.service
+
+[Service]
+Type=simple
+# Remplace pi par ton nom d'utilisateur si différent
+User=pi
+Group=pi
+# Chemin vers ton script
+WorkingDirectory=/home/pi/Documents/ArrosageAUTO
+ExecStart=/usr/bin/python3 /home/pi/Documents/ArrosageAUTO/telegram_control.py
+# Sécurité : redémarre automatiquement le script s'il plante
+Restart=always
+RestartSec=10
+
+[Install]
+# Permet au service de se lancer au démarrage du Pi
+WantedBy=multi-user.target
+EOF
+
 # Recharger et activer le service
 sudo systemctl daemon-reload || handle_error
 sudo systemctl enable ArrosageAUTO.service || handle_error
+sudo systemctl enable Supervisor.service || handle_error
 
 # Redémarrage du Raspberry Pi
 echo -e "${BBlue}[INFO]${Color_Off} Le Raspberry Pi va redémarrer..."
