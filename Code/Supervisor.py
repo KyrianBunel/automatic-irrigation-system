@@ -8,7 +8,7 @@ from ping3 import ping
 # --- CONFIGURATION ---
 TOKEN = "8778005076:AAHEqaWUZz7aFPEaTOAL_p6ty5IFzFWLR1Q"
 CHAT_ID = "8768214507"
-MQTT_BROKER = "localhost"
+MQTT_BROKER = "192.168.1.30"
 MQTT_TOPICS = [
     "arrosage/config/vanne1",
     "arrosage/config/vanne2",
@@ -187,6 +187,24 @@ try:
                             send_telegram_question(num, duree_minutes)
                             dernier_seuil_atteint[num] = seuil
                             break
+
+        # Vérification des alertes en mode "AUTO"
+        if current_mode == "AUTO":
+            for num_vanne in range(1, 4):
+                etat_actuel = vannes_status[num_vanne]
+                    
+                if etat_actuel != dernier_seuil_atteint[num_vanne]:
+                        
+                    if etat_actuel == 1:
+                        msg = f"ℹ️ [INFO] : Vanne {num_vanne} allumée (AUTO)"
+                        send_telegram(msg)
+                        logger.info(msg)
+                    else:
+                        msg = f"ℹ️ [INFO] : Vanne {num_vanne} éteinte (AUTO)"
+                        send_telegram(msg)
+                        logger.info(msg)
+
+                    dernier_seuil_atteint[num_vanne] = etat_actuel
                             
         #update Telegram
         check_telegram_updates(client)
