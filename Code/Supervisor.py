@@ -6,8 +6,8 @@ import json
 from ping3 import ping
 
 # --- CONFIGURATION ---
-TOKEN = "8778005076:AAHEqaWUZz7aFPEaTOAL_p6ty5IFzFWLR1Q"
-CHAT_ID = "8768214507"
+TOKEN = "YOUR_API_KEY"
+CHAT_ID = "YOUR_CHAT_ID"
 MQTT_BROKER = "192.168.1.30"
 MQTT_TOPICS = [
     "arrosage/config/vanne1",
