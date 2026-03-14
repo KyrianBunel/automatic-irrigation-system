@@ -8,7 +8,7 @@ from ping3 import ping
 # --- CONFIGURATION ---
 TOKEN = "YOUR_API_KEY"
 CHAT_ID = "YOUR_CHAT_ID"
-MQTT_BROKER = "192.168.1.30"
+MQTT_BROKER = "localhost"
 MQTT_TOPICS = [
     "arrosage/config/vanne1",
     "arrosage/config/vanne2",
