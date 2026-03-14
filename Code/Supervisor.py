@@ -187,6 +187,23 @@ try:
                             send_telegram_question(num, duree_minutes)
                             dernier_seuil_atteint[num] = seuil
                             break
+
+        # Vérification des alertes en mode "AUTO"                      
+        if current_mode == "AUTO":
+            for num_vanne in range(1, 4):
+                etat_actuel = vannes_status[num_vanne]
+
+                if etat_actuel != dernier_seuil_atteint[num_vanne]:
+                    
+                    if etat_actuel == 1:
+                        msg = f"ℹ️ [INFO] : Vanne {num_vanne} allumée (AUTO)"
+                        send_telegram(msg)
+                        logger.info(msg)
+                    else:
+                        msg = f"ℹ️ [INFO] : Vanne {num_vanne} éteinte (AUTO)"
+                        send_telegram(msg)
+                        logger.info(msg)
+                    dernier_seuil_atteint[num_vanne] = etat_actuel
                             
         #update Telegram
         check_telegram_updates(client)
