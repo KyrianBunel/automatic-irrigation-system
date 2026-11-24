@@ -46,6 +46,19 @@ Les fichiers d'origine sont dans `_sauvegarde_avant_modifs_2026-11-24/`. Le toke
 - AUTO : les conditions (pluie, température) et leur valeur actuelle s'affichent avec ✓ ou ✗. Dernière décision expliquée, durée par zone modifiable, bouton « Lancer un cycle maintenant ».
 - PROG : formulaire prérempli avec le programme en cours, « Prochain arrosage » affiché, vérifications côté serveur (dates, durées, heure obligatoire, zones qui se chevauchent) avec des messages clairs.
 
+## Web app iPhone (refonte de l'interface)
+
+- **Installer** : dans Safari sur l'iPhone, ouvre `http://<IP du Pi>:5000`, connecte-toi, puis **Partager → Sur l'écran d'accueil**. L'app s'ouvre en plein écran avec son icône.
+- **Connexion** : identifiant `admin` et mot de passe dans `/etc/arrosage/identifiants_mqtt.txt`. La session est mémorisée 30 jours. Après 5 essais ratés, la connexion est bloquée 5 minutes.
+- **En haut de l'écran**, une phrase dit ce qui se passe (« La zone 2 arrose. Encore 8 min. », « Rien n'arrose. Prochain arrosage demain à 06:00. »), avec une barre d'eau qui se remplit et un bouton « Tout arrêter » quand une zone arrose.
+- **Modes** : Manuel, Météo (ancien AUTO), Programme (ancien PROG). Les zones s'ouvrent et se ferment avec des interrupteurs.
+- **Météo** : les trois conditions s'affichent avec leur valeur du moment (✓ ou ✗), et la durée par zone se règle avec − et +.
+- **Programme** : formulaire prérempli, enregistré sans recharger la page, erreurs expliquées en clair.
+- **Mode sombre** automatique, aucune ressource externe : l'app fonctionne sans internet, sur le Wi-Fi de la maison.
+- **Hors de chez toi** : passe par un VPN (Tailscale ou WireGuard). N'ouvre pas le port 5000 sur ta box.
+- **Technique** : la page appelle `/api/etat` toutes les 3 s, et les commandes passent en JSON avec un jeton anti-CSRF. La logique publie la zone en cours et son heure de fin sur `arrosage/info/en_cours`.
+- **Si `config.json` existe déjà** (installation antérieure), ajoute `"cle_secrete"` dans la section `web`, sinon les sessions dépendent du mot de passe.
+
 ## Changements de comportement à connaître
 - La pluie « prévue » couvre aujourd'hui et demain. Avant, elle couvrait demain et après-demain.
 - Si les données météo manquent (station muette et Open-Meteo injoignable), le mode AUTO **n'arrose pas** et l'indique.

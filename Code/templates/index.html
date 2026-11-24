@@ -2,161 +2,123 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Arrosage automatique</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Arrosage</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arrosage">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#EEF2EC" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111915" media="(prefers-color-scheme: dark)">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="{{ url_for('manifeste') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('icone') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icones/icone-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
-<body data-mode="{{ mode }}">
+<body data-csrf="{{ csrf }}" data-zones="{{ nb }}">
 
-<header class="entete">
-  <h1>💧 Arrosage</h1>
-  <div class="statuts">
-    <span id="esp" class="pastille {{ 'ok' if s.esp else 'ko' }}">
-      {{ 'Vannes en ligne' if s.esp else ('Vannes hors ligne' if s.esp is not none else 'Vannes : état inconnu') }}
-    </span>
-    <span id="heure" class="heure"></span>
-  </div>
+<header class="barre">
+  <span class="marque">Arrosage</span>
+  <span id="liaison" class="liaison">Connexion…</span>
 </header>
 
 <main>
-  {% for categorie, message in get_flashed_messages(with_categories=true) %}
-    <p class="message {{ categorie }}">{{ message }}</p>
-  {% endfor %}
-  {% if erreurs %}
-    <div class="message erreur">
-      <strong>Le programme n'a pas été enregistré :</strong>
-      <ul>{% for e in erreurs %}<li>{{ e }}</li>{% endfor %}</ul>
-    </div>
-  {% endif %}
-  <p id="connexion" class="message erreur cache">Connexion au Raspberry Pi perdue, nouvel essai…</p>
+  <section class="etat" id="etat" aria-live="polite">
+    <h1 id="phrase" class="phrase">…</h1>
+    <p id="detail" class="detail"></p>
+    <div id="debit" class="debit" hidden><span id="debit-niveau"></span></div>
+    <button id="arreter" class="bouton arreter" type="button" hidden>Tout arrêter</button>
+  </section>
 
-  <!-- Mode -->
-  <section class="carte">
+  <section class="bloc">
     <h2>Mode</h2>
-    <div class="segments">
-      {% for m, aide in [('MANU', 'Vous ouvrez et fermez les vannes'),
-                          ('AUTO', 'Arrosage selon la météo'),
-                          ('PROG', 'Arrosage selon un programme')] %}
-      <form method="post" action="{{ url_for('changer_mode') }}">
-        <input type="hidden" name="csrf" value="{{ csrf }}">
-        <input type="hidden" name="mode" value="{{ m }}">
-        <button class="segment {{ 'actif' if mode == m }}" {{ 'aria-pressed=true' if mode == m }}>
-          <span class="nom">{{ m }}</span><span class="aide">{{ aide }}</span>
-        </button>
-      </form>
-      {% endfor %}
+    <div class="segments" role="radiogroup" aria-label="Mode d'arrosage">
+      <button type="button" role="radio" data-mode="MANU" aria-checked="false">Manuel</button>
+      <button type="button" role="radio" data-mode="AUTO" aria-checked="false">Météo</button>
+      <button type="button" role="radio" data-mode="PROG" aria-checked="false">Programme</button>
     </div>
-    <p id="decision" class="decision">{{ s.decision or 'Aucune décision pour l’instant.' }}</p>
+    <p id="explication" class="aide"></p>
+    <p id="decision" class="decision" hidden></p>
   </section>
 
-  <!-- Vannes -->
-  <section class="carte">
-    <h2>Vannes</h2>
-    {% if mode != 'MANU' %}
-      <p class="note">Les vannes sont pilotées par le mode {{ mode }}. Passez en MANU pour les commander à la main.</p>
-    {% else %}
-      <p class="note">Une vanne ouverte à la main se referme toute seule après {{ reglages.duree_max_manu_min }} min.</p>
-    {% endif %}
-    <div class="vannes">
-      {% for i in range(1, nb + 1) %}
-      {% set ouverte = s.vannes[i] %}
-      <div class="vanne {{ 'ouverte' if ouverte }}" data-vanne="{{ i }}">
-        <span class="titre">Zone {{ i }}</span>
-        <span class="etat">{{ 'Ouverte' if ouverte else ('Fermée' if ouverte is not none else 'Inconnu') }}</span>
-        {% if mode == 'MANU' %}
-        <form method="post" action="{{ url_for('commander_vanne', i=i) }}">
-          <input type="hidden" name="csrf" value="{{ csrf }}">
-          <input type="hidden" name="etat" value="{{ '0' if ouverte else '1' }}">
-          <button class="bouton">{{ 'Fermer' if ouverte else 'Ouvrir' }}</button>
-        </form>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    <form method="post" action="{{ url_for('tout_arreter') }}">
-      <input type="hidden" name="csrf" value="{{ csrf }}">
-      <button class="bouton danger large">Tout arrêter</button>
-    </form>
+  <section class="bloc">
+    <h2>Zones</h2>
+    <ul id="zones" class="liste"></ul>
   </section>
 
-  {% if mode == 'AUTO' %}
-  <!-- AUTO -->
-  <section class="carte">
-    <h2>Mode AUTO</h2>
-    <p>Chaque jour à <strong>{{ reglages.heure_auto }}</strong>, les zones sont arrosées l'une après l'autre
-       pendant <strong>{{ duree_zone }} min</strong> chacune, si toutes ces conditions sont réunies :</p>
-    <table class="criteres">
-      <tr><th>Critère</th><th>Condition</th><th>Maintenant</th></tr>
-      {% for nom, condition, c in criteres %}
-      <tr>
-        <td>{{ nom }}</td><td>{{ condition }}</td>
-        <td class="{{ 'ok' if c.ok else ('ko' if c.ok is not none else 'inconnu') }}">
-          {{ '✓' if c.ok else ('✗' if c.ok is not none else '?') }} {{ c.valeur }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    <div class="ligne">
-      <form method="post" action="{{ url_for('changer_duree') }}" class="ligne">
-        <input type="hidden" name="csrf" value="{{ csrf }}">
-        <label for="duree-auto">Durée par zone (min)</label>
-        <input id="duree-auto" type="number" name="duree" min="1" max="{{ duree_max }}" value="{{ duree_zone }}" required>
-        <button class="bouton">Enregistrer</button>
-      </form>
-      <form method="post" action="{{ url_for('lancer_cycle') }}">
-        <input type="hidden" name="csrf" value="{{ csrf }}">
-        <button class="bouton principal">Lancer un cycle maintenant</button>
-      </form>
-    </div>
-  </section>
-  {% endif %}
-
-  {% if mode == 'PROG' %}
-  <!-- PROG -->
-  <section class="carte" id="programme">
-    <h2>Programme</h2>
-    <p class="prochain">Prochain arrosage : <strong>{{ prochain or 'aucun (programme incomplet ou terminé)' }}</strong></p>
-    <form method="post" action="{{ url_for('enregistrer_programme') }}" class="formulaire">
-      <input type="hidden" name="csrf" value="{{ csrf }}">
-      <div class="champs">
-        <label>Du <input type="date" name="dateDebut" value="{{ valeurs.dateDebut }}" required></label>
-        <label>au <input type="date" name="dateFin" value="{{ valeurs.dateFin }}" min="{{ aujourdhui }}" required></label>
-        <label>Tous les <input type="number" name="recurrence" min="1" max="365" value="{{ valeurs.recurrence }}" required> jour(s)</label>
-        <label>Durée par zone <input type="number" name="duree" min="1" max="{{ duree_max }}" value="{{ valeurs.duree }}" required> min</label>
-      </div>
-      <p class="note">Une seule vanne s'ouvre à la fois : laissez au moins la durée d'arrosage entre deux zones.
-        {% if reglages.prog_suspendre_si_pluie %}Le programme est suspendu s'il est tombé plus de {{ reglages.seuil_pluie_passee_mm }} mm.{% endif %}</p>
-      <div class="zones">
-        {% for i in range(1, nb + 1) %}
-        <div class="zone">
-          <label><input type="checkbox" name="zone{{ i }}" data-heure="heure{{ i }}" {{ 'checked' if valeurs['zone' ~ i] }}> Zone {{ i }}</label>
-          <input type="time" id="heure{{ i }}" name="heureDebut{{ i }}" value="{{ valeurs['heureDebut' ~ i] }}" aria-label="Heure de début zone {{ i }}">
+  <section class="bloc" id="panneau-auto" hidden>
+    <h2>Quand arroser</h2>
+    <p class="aide" id="regle-auto"></p>
+    <ul id="criteres" class="liste"></ul>
+    <div class="liste">
+      <div class="ligne">
+        <span>Durée par zone</span>
+        <div class="pas">
+          <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+          <input id="duree-auto" type="number" inputmode="numeric" min="1" max="120" aria-label="Durée par zone en minutes">
+          <span class="unite">min</span>
+          <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
         </div>
-        {% endfor %}
       </div>
-      <button class="bouton principal">Enregistrer le programme</button>
+    </div>
+    <button id="lancer" type="button" class="bouton principal">Arroser toutes les zones maintenant</button>
+  </section>
+
+  <section class="bloc" id="panneau-prog" hidden>
+    <h2>Programme</h2>
+    <p id="prochain" class="prochain"></p>
+    <form id="form-prog" novalidate>
+      <div class="liste">
+        <label class="ligne">Du <input type="date" name="dateDebut" required></label>
+        <label class="ligne">Au <input type="date" name="dateFin" required></label>
+        <div class="ligne">
+          <span>Tous les</span>
+          <div class="pas">
+            <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+            <input name="recurrence" type="number" inputmode="numeric" min="1" max="365" aria-label="Fréquence en jours">
+            <span class="unite">j</span>
+            <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
+          </div>
+        </div>
+        <div class="ligne">
+          <span>Durée par zone</span>
+          <div class="pas">
+            <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+            <input name="duree" type="number" inputmode="numeric" min="1" max="120" aria-label="Durée par zone en minutes">
+            <span class="unite">min</span>
+            <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
+          </div>
+        </div>
+      </div>
+      <h3>Zones et heures de départ</h3>
+      <ul id="prog-zones" class="liste"></ul>
+      <p class="aide" id="aide-prog"></p>
+      <ul id="erreurs" class="erreurs" hidden></ul>
+      <button type="submit" class="bouton principal">Enregistrer le programme</button>
     </form>
   </section>
-  {% endif %}
 
-  <!-- Météo -->
-  <section class="carte">
-    <h2>Météo</h2>
-    {% set st = s.station %}
-    <dl class="meteo">
-      <dt>Température</dt><dd>{{ st.temperature ~ ' °C' if st.temperature else '—' }}</dd>
-      <dt>Humidité</dt><dd>{{ st.humidite ~ ' %' if st.humidite else '—' }}</dd>
-      <dt>Pluie (dernière heure)</dt><dd>{{ st.pluie ~ ' mm' if st.pluie else '—' }}</dd>
-      <dt>Pluie 48 h passées / prévues</dt>
-      <dd>{{ s.meteo_web.pluie_passee if s.meteo_web.pluie_passee is not none else '—' }} /
-          {{ s.meteo_web.pluie_prevue if s.meteo_web.pluie_prevue is not none else '—' }} mm</dd>
-      <dt>Batterie station</dt><dd>{{ st.batterie_pourcent ~ ' %' if st.batterie_pourcent else '—' }}</dd>
-      <dt>Dernière mesure station</dt><dd>{{ st.horodatage.replace('T', ' ') if st.horodatage else 'jamais reçue' }}</dd>
-    </dl>
+  <section class="bloc">
+    <h2>Au jardin</h2>
+    <dl id="meteo" class="meteo"></dl>
+    <p id="meteo-maj" class="aide"></p>
   </section>
+
+  <p id="installer" class="installer" hidden>
+    Pour l'avoir comme une app : touchez <strong>Partager</strong>, puis <strong>Sur l'écran d'accueil</strong>.
+    <button type="button" id="installer-fermer" class="lien">Masquer</button>
+  </p>
+
+  <footer>
+    <form method="post" action="{{ url_for('deconnexion') }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="lien">Se déconnecter</button>
+    </form>
+  </footer>
 </main>
 
-<footer>Développé par Kyrian BUNEL</footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

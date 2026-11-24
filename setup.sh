@@ -81,6 +81,8 @@ def reel(x):
         return None
 c["mqtt"]["mot_de_passe"] = os.environ["MDP_PI"]
 c["web"]["mot_de_passe"] = os.environ["MDP_WEB"]
+import secrets
+c["web"]["cle_secrete"] = secrets.token_hex(32)   # garde les sessions de la web app après un redémarrage
 c["position"] = {"latitude": reel(os.environ.get("LAT")), "longitude": reel(os.environ.get("LON"))}
 print(json.dumps(c, indent=2, ensure_ascii=False))
 EOF

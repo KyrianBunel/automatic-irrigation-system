@@ -91,6 +91,15 @@ def zone_prog_active(prog, maintenant, nb_zones, duree_max):
     return None
 
 
+def fin_creneau_prog(prog, maintenant, zone, duree_max):
+    """Heure de fin du créneau programmé de `zone` aujourd'hui."""
+    hm = lire_heure(prog.get(f"StrDebut{zone}"))
+    duree = min(lire_entier(prog.get("StrDuree"), 0) or 0, duree_max)
+    if hm is None:
+        return None
+    return maintenant.replace(hour=hm[0], minute=hm[1], second=0, microsecond=0) + timedelta(minutes=duree)
+
+
 def zone_cycle_auto(debut_cycle, maintenant, duree_min, nb_zones):
     """Zone active d'un cycle séquentiel (1..nb_zones), 0 quand le cycle est terminé."""
     ecoule_min = (maintenant - debut_cycle).total_seconds() / 60
@@ -107,6 +116,9 @@ def pluie_recente(*valeurs):
 
 def decision_auto(temperature, pluie_passee, pluie_prevue, reglages):
     """Retourne (arroser, raison)."""
+    def fr(x):
+        return f"{x:.1f}".replace(".", ",")
+
     seuil_passe = reglages["seuil_pluie_passee_mm"]
     seuil_prevu = reglages["seuil_pluie_prevue_mm"]
     t_min = reglages["temperature_min_c"]
@@ -115,13 +127,13 @@ def decision_auto(temperature, pluie_passee, pluie_prevue, reglages):
     if pluie_passee is None or pluie_prevue is None:
         return False, "pas d'arrosage : données de pluie indisponibles"
     if pluie_passee >= seuil_passe:
-        return False, f"pas d'arrosage : {pluie_passee:.1f} mm tombés récemment (seuil {seuil_passe} mm)"
+        return False, f"pas d'arrosage : {fr(pluie_passee)} mm tombés récemment (seuil {seuil_passe:g} mm)"
     if pluie_prevue >= seuil_prevu:
-        return False, f"pas d'arrosage : {pluie_prevue:.1f} mm prévus sous 48 h (seuil {seuil_prevu} mm)"
+        return False, f"pas d'arrosage : {fr(pluie_prevue)} mm prévus sous 48 h (seuil {seuil_prevu:g} mm)"
     if temperature <= t_min:
-        return False, f"pas d'arrosage : {temperature:.1f} °C (il faut plus de {t_min} °C)"
-    return True, (f"arrosage lancé : {pluie_passee:.1f} mm tombés, {pluie_prevue:.1f} mm prévus, "
-                  f"{temperature:.1f} °C")
+        return False, f"pas d'arrosage : {fr(temperature)} °C (il faut plus de {t_min:g} °C)"
+    return True, (f"arrosage lancé : {fr(pluie_passee)} mm tombés, {fr(pluie_prevue)} mm prévus, "
+                  f"{fr(temperature)} °C")
 
 
 # =============================================================================
@@ -151,6 +163,7 @@ class Controleur:
         self.creneaux_annules = set()           # (date, zone) arrêtés à la main en PROG
         self.zone_prog_precedente = None
         self.derniere_decision = None
+        self.en_cours_cle = None
         self.client = None
 
     # --- MQTT ---------------------------------------------------------------
@@ -213,6 +226,17 @@ class Controleur:
                 continue
             if maintenant - self.dernier_envoi[i] >= INTERVALLE_RENVOI_S:
                 self.commander(i, voulu)
+
+    def publier_en_cours(self, entrees):
+        """entrees : liste de (zone, datetime de fin ou None, source). Publié quand ça change."""
+        cle = tuple((z, s) for z, _, s in entrees)
+        if cle == self.en_cours_cle:
+            return
+        self.en_cours_cle = cle
+        contenu = [{"zone": z, "fin": f.isoformat(timespec="seconds") if f else None, "source": s}
+                   for z, f, s in entrees]
+        if self.client:
+            self.client.publish(commun.TOPIC_EN_COURS, json.dumps(contenu), retain=True)
 
     def publier_decision(self, texte):
         if texte == self.derniere_decision:
@@ -315,13 +339,18 @@ class Controleur:
 
             if mode == "MANU":
                 limite = self.reglages["duree_max_manu_min"] * 60
+                en_cours = []
                 for i, depuis in self.ouverte_depuis.items():
-                    if depuis and time.monotonic() - depuis >= limite \
-                            and time.monotonic() - self.dernier_envoi[i] >= INTERVALLE_RENVOI_S:
+                    if not depuis:
+                        continue
+                    ecoule = time.monotonic() - depuis
+                    en_cours.append((i, maintenant + timedelta(seconds=max(0, limite - ecoule)), "MANU"))
+                    if ecoule >= limite and time.monotonic() - self.dernier_envoi[i] >= INTERVALLE_RENVOI_S:
                         self.commander(i, False, force=True)
                         self.publier_decision(
                             f"vanne {i} refermée automatiquement après "
                             f"{self.reglages['duree_max_manu_min']} min en MANU")
+                self.publier_en_cours(en_cours)
                 return
 
             fiable = commun.heure_fiable()
@@ -344,6 +373,11 @@ class Controleur:
                     if zone == 0:
                         self.cycle_debut = None
                         self.publier_decision("cycle AUTO terminé")
+                if zone:
+                    fin = self.cycle_debut + timedelta(minutes=zone * self.duree_zone())
+                    self.publier_en_cours([(zone, fin, "AUTO")])
+                else:
+                    self.publier_en_cours([])
                 self.synchroniser(zone)
                 return
 
@@ -358,13 +392,18 @@ class Controleur:
                 _, pluie_passee, _ = self.conditions_meteo()
                 seuil = self.reglages["seuil_pluie_passee_mm"]
                 if pluie_passee is not None and pluie_passee >= seuil:
-                    self.publier_decision(f"programme suspendu : {pluie_passee:.1f} mm tombés récemment")
+                    self.publier_decision(f"programme suspendu : {str(round(pluie_passee, 1)).replace(".", ",")} mm tombés récemment")
                     zone = None
             if zone and zone != self.zone_prog_precedente:
                 self.publier_decision(f"programme : zone {zone} en cours")
             elif not zone and self.zone_prog_precedente:
                 self.publier_decision(f"programme : zone {self.zone_prog_precedente} terminée")
             self.zone_prog_precedente = zone
+            if zone:
+                fin = fin_creneau_prog(self.config, maintenant, zone, self.reglages["duree_max_zone_min"])
+                self.publier_en_cours([(zone, fin, "PROG")])
+            else:
+                self.publier_en_cours([])
             self.synchroniser(zone)
 
     def demarrer(self):

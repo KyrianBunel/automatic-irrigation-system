@@ -4,7 +4,8 @@ open-source automatic irrigation system based on raspberryPi
 # Features :
 - Connect to local network over Ethernet
 - Compatible with a weather station included in the project to collect temperature, humidity, pressure, brightness and also features a rain sensor
-- Controllable through a password-protected web page (LOCAL_IP_ADDRESS:5000 ex : 192.168.1.10:5000) and Home Assistant (MQTT auto-discovery)
+- Controllable through a password-protected web app (LOCAL_IP_ADDRESS:5000 ex : 192.168.1.10:5000) and Home Assistant (MQTT auto-discovery)
+    - On iPhone: open it in Safari, then Share → Add to Home Screen to use it full screen like an app (login remembered for 30 days, dark mode, works without internet)
     - 3 operating modes :
   
           - MANU -> allows manual control of the 3 valves independently; a valve left open is closed automatically after 60 min.

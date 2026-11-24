@@ -62,6 +62,7 @@ TOPIC_ACTION = "arrosage/cmd/action"       # "lancer_cycle" / "tout_arreter" : n
 TOPIC_ESP = "arrosage/status/esp"          # "online" / "offline" (LWT de l'ESP32)
 TOPIC_SECURITE = "arrosage/status/securite"  # coupures de sécurité signalées par l'ESP32
 TOPIC_DECISION = "arrosage/info/decision"  # dernière décision lisible par un humain
+TOPIC_EN_COURS = "arrosage/info/en_cours"  # zones qui arrosent et heure de fin prévue (JSON)
 TOPIC_METEO_WEB = "arrosage/info/meteo"    # cumul de pluie passé / prévu (JSON)
 TOPIC_METEO = "arrosage/weather/"          # données de la station météo LoRa
 
