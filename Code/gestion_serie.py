@@ -1,122 +1,92 @@
-import serial
-from datetime import datetime
-import time
+"""Passerelle station météo : récepteur LoRa (port série USB) -> MQTT.
+
+Trame attendue (Weather_station_Receive) :
+  Temp: 21.30C, Hum: 55.00%, Press: 1013.20Hpa, Lum: 1234.00Lux, Rain 0.00mm, Batt: 3.95V
+Chaque mesure est publiée (retenue) sur arrosage/weather/<clé>, avec un horodatage
+pour que la logique d'arrosage sache si les données sont récentes.
+"""
+
 import re
-import paho.mqtt.client as mqtt
+import time
+from datetime import datetime
 
-import logging
+import serial
 
-import numpy as np
-import scipy.interpolate as si
-from scipy.optimize import brentq
-import matplotlib.pyplot as plt
+import commun
 
-USB_PORT = "/dev/ttyUSB0"
-BAUD_RATE = 115200
+MOTIF = re.compile(
+    r"Temp: ([\d.-]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, "
+    r"Rain ([\d.]+)mm, Batt: ([\d.]+)V"
+)
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='WeatherStation.log', encoding='utf-8', level=logging.DEBUG)
+# Courbe de décharge LiPo : tension (V) pour 0 %, 2 %, ... 100 %
+TENSIONS = [3.30, 3.42, 3.54, 3.61, 3.63, 3.65, 3.67, 3.69, 3.70, 3.71, 3.72, 3.72, 3.73,
+            3.74, 3.74, 3.75, 3.76, 3.77, 3.77, 3.78, 3.79, 3.80, 3.81, 3.81, 3.82, 3.83,
+            3.84, 3.85, 3.85, 3.86, 3.87, 3.88, 3.89, 3.90, 3.91, 3.92, 3.93, 3.94, 3.95,
+            3.96, 3.97, 4.00, 4.03, 4.06, 4.08, 4.10, 4.13, 4.16, 4.18, 4.21, 4.24]
+POURCENTS = list(range(0, 102, 2))
 
-# --- Configuration MQTT ---
-MQTT_BROKER = "localhost"
-MQTT_BASE_TOPIC = "arrosage/weather/"
 
-data_store = {
-    "temperature": "0",
-    "humidite": "0",
-    "pression": "0",
-    "luminosite": "0",
-    "pluie": "0",
-    "battery voltage": "0",
-    "battery %": "0"
-}
+def pourcentage_batterie(tension):
+    """Interpolation linéaire dans la courbe de décharge (remplace numpy.interp)."""
+    if tension <= TENSIONS[0]:
+        return 0
+    if tension >= TENSIONS[-1]:
+        return 100
+    for k in range(1, len(TENSIONS)):
+        v0, v1 = TENSIONS[k - 1], TENSIONS[k]
+        if v0 <= tension <= v1:
+            if v1 == v0:
+                return POURCENTS[k]
+            p0, p1 = POURCENTS[k - 1], POURCENTS[k]
+            return int(p0 + (tension - v0) * (p1 - p0) / (v1 - v0))
+    return 100
 
-# --- Client MQTT ---
-def on_message(client, userdata, message):
-    """Met à jour le store local quand une valeur change sur MQTT"""
-    topic = message.topic.replace(MQTT_BASE_TOPIC, "")
-    payload = message.payload.decode()
-    if topic in data_store:
-        data_store[topic] = payload
 
-mqtt_client = mqtt.Client()
-mqtt_client.on_message = on_message
-mqtt_client.connect(MQTT_BROKER, 1883, 60)
-mqtt_client.subscribe(MQTT_BASE_TOPIC + "#") # S'abonne à tous les paramètres
-mqtt_client.loop_start()
+def analyser(ligne):
+    """Retourne le dictionnaire des mesures, ou None si la trame est invalide."""
+    m = MOTIF.search(ligne)
+    if not m:
+        return None
+    temperature, humidite, pression, luminosite, pluie, tension = (float(x) for x in m.groups())
+    return {
+        "temperature": temperature,
+        "humidite": humidite,
+        "pression": pression,
+        "luminosite": luminosite,
+        "pluie": pluie,
+        "batterie_tension": tension,
+        "batterie_pourcent": pourcentage_batterie(tension),
+        "horodatage": datetime.now().isoformat(timespec="seconds"),
+    }
 
-def mqtt_publish(param, value):
-    """Fonction utilitaire pour publier et garder en mémoire (retain)"""
-    data_store[param] = str(value) # Update local
-    mqtt_client.publish(MQTT_BASE_TOPIC + param, str(value), retain=True)
 
 def main():
-    global debug
-    # Modèle pour extraire les valeurs
-    pattern = r"Temp: ([\d.-]+)C, Hum: ([\d.]+)%, Press: ([\d.]+)Hpa, Lum: ([\d.]+)Lux, Rain ([\d.]+)mm, Batt: ([\d.]+)V(?:,.*)?"
+    cfg = commun.charger_config()
+    log = commun.journal("meteo")
+    port, vitesse = cfg["serie"]["port"], int(cfg["serie"]["vitesse"])
+    client = commun.creer_client_mqtt("arrosage-meteo", cfg)
+
     while True:
         try:
-            # Initialisation du port série
-            with serial.Serial(USB_PORT, BAUD_RATE, timeout=1) as ser:
-                logger.info(f"{datetime.now()}: Liaison série ouverte sur {USB_PORT} à {BAUD_RATE} bauds.")
+            with serial.Serial(port, vitesse, timeout=2) as ser:
+                log.info("Liaison série ouverte sur %s à %d bauds", port, vitesse)
                 while True:
-                    if ser.in_waiting > 0:  # Vérifie si des données sont disponibles
-                        ligne = ser.readline().decode('utf-8', errors='ignore').strip()
-                        # Rechercher dans la chaîne
-                        match = re.search(pattern, ligne)
+                    ligne = ser.readline().decode("utf-8", errors="ignore").strip()
+                    if not ligne:
+                        continue
+                    mesures = analyser(ligne)
+                    if mesures is None:
+                        log.debug("Trame ignorée : %s", ligne)
+                        continue
+                    for cle, val in mesures.items():
+                        client.publish(commun.TOPIC_METEO + cle, str(val), retain=True)
+                    log.info("Station : %.1f °C, %.1f mm, batterie %s %%",
+                             mesures["temperature"], mesures["pluie"], mesures["batterie_pourcent"])
+        except (serial.SerialException, OSError) as e:
+            log.error("Erreur série (%s), nouvel essai dans 5 s", e)
+            time.sleep(5)
 
-                        if match:
-                            # Extraire les valeurs correspondantes et les convertir en float
-                            temperature = float(match.group(1))
-                            humidite = float(match.group(2))
-                            pression = float(match.group(3))
-                            luminosite = float(match.group(4))
-                            rain = float(match.group(5))
-                            Vbatt = float(match.group(6))
-
-                            # Estimation du pourcentage batterie
-                            v_points = [3.30, 3.42, 3.54, 3.61, 3.63, 3.65, 3.67, 3.69, 3.70, 3.71, 3.72, 3.72, 3.73, 3.74, 3.74, 3.75, 3.76, 3.77, 3.77, 3.78, 3.79, 3.80, 3.81, 3.81, 3.82, 3.83, 3.84, 3.85, 3.85, 3.86, 3.87, 3.88, 3.89, 3.90, 3.91, 3.92, 3.93, 3.94, 3.95, 3.96, 3.97, 4.00, 4.03, 4.06, 4.08, 4.10, 4.13, 4.16, 4.18, 4.21, 4.24]
-                            p_points = list(range(0, 102, 2))
-
-                            # np.interp(valeur_cherchée, liste_tensions, liste_pourcentages)
-                            Pbatt = int(np.interp(Vbatt, v_points, p_points))
-
-                            # Afficher les résultats
-                            logger.debug(f"{datetime.now()}: Données envoyées avec succes")
-                            #logger.debug(f"Température : {temperature} °C")
-                            #logger.debug(f"Humidité : {humidite} %")
-                            #logger.debug(f"Pression : {pression} hPa")
-                            #logger.debug(f"Luminosité : {luminosite} Lux")
-                            logger.debug(f"Batterie : {Vbatt}V ({Pbatt})%")
-
-                            # Créer un client MQTT et publier les variables
-                            params = {
-                                "temperature": temperature,
-                                "humidite": humidite,
-                                "pression": pression,
-                                "luminosite": luminosite,
-                                "pluie": rain,
-                                "battery voltage": Vbatt,
-                                "battery %": Pbatt
-                            }
-                                
-                            for key, val in params.items():
-                                mqtt_client.publish(MQTT_BASE_TOPIC + key, str(val), retain=True)
-
-
-                    time.sleep(0.1)
-        except serial.SerialException as e:
-            logger.critical(f"{datetime.now()}: Erreur série : {e}")
-            logger.critical("Réinitialisation du port série...")
-            time.sleep(2)  # Attendre avant de réessayer
-        except OSError as e:
-            logger.critical(f"{datetime.now()}: Erreur d'entrée/sortie : {e}")
-            logger.critical("Redémarrage du périphérique...")
-            time.sleep(2)
-        except KeyboardInterrupt:
-            logger.warning(f"{datetime.now()}: Arrêt demandé par l'utilisateur")
-            break
 
 if __name__ == "__main__":
     main()
-

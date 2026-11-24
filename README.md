@@ -4,13 +4,14 @@ open-source automatic irrigation system based on raspberryPi
 # Features :
 - Connect to local network over Ethernet
 - Compatible with a weather station included in the project to collect temperature, humidity, pressure, brightness and also features a rain sensor
-- Controllable through a web page (LOCAL_IP_ADDRESS/accueil ex : 192.168.1.10/accueil)
+- Controllable through a password-protected web page (LOCAL_IP_ADDRESS:5000 ex : 192.168.1.10:5000) and Home Assistant (MQTT auto-discovery)
     - 3 operating modes :
   
-          - MANU -> allows manual control of the 6 valves independently; once the selected valve is active, it can be deactivated only if the user does it manually.
-          - AUTO -> uses weather station and soil moisture sensors to automatically trigger a 15-minute watering cycle.
+          - MANU -> allows manual control of the 3 valves independently; a valve left open is closed automatically after 60 min.
+          - AUTO -> every day at 05:00, uses the weather station and Open-Meteo forecasts to decide whether to water; zones are watered one after the other.
           - PROG -> allows the user to enter information such as watering start and end date, watering duration, recurrence and watering time for each valve via a form.
-- Ability to view the current program and sensors values via a dashboard page (LOCAL_IP_ADDRESS/dashboard ex : 192.168.1.10/dashboard)
+- Real valve state, last decision and weather values shown on the home page, refreshed every 3 s
+- Safety: the ESP32 closes any valve open for more than 125 min, and closes everything if the connection is lost
 - Automatic sprinkler stop in case of rain (except in MANU mode)
 - Transmits sensor data every 30min to a MQTT server host by the RaspberryPI to create a database and display data with NodeRED
 
@@ -34,9 +35,14 @@ open-source automatic irrigation system based on raspberryPi
 - Wait about a minute for the Raspberry Pi to boot up, then use software like Advanced IP Scanner to find the Raspberry Pi's IP address
 - connect to the Raspberry Pi with SSH and enter the folowing commands to donwload the setup file and execute it
 
-        curl -L https://raw.githubusercontent.com/KyrianBunel/automatic-irrigation-system/main/setup.sh -o /home/pi/setup.sh
-        chmod +x setup.sh
+        sudo apt install -y git
+        git clone https://github.com/KyrianBunel/automatic-irrigation-system.git
+        cd automatic-irrigation-system
         ./setup.sh
+
+- Run it as your normal user (not with sudo). The script generates the MQTT and web passwords in `/etc/arrosage/identifiants_mqtt.txt`.
+- ESP32: copy `CODE_ESP_CLIENT/secrets.example.h` to `secrets.h`, fill in your Wi-Fi and the `esp32` MQTT password, then flash the board.
+- See `MODIFICATIONS.md` (French) for the full list of changes and settings.
 
 # Additional material required :
 If you whant the full experience you will need extra parts :

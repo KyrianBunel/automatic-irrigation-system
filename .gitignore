@@ -1,0 +1,16 @@
+# Secrets : ne jamais les envoyer sur GitHub
+Code/config.json
+CODE_ESP_CLIENT/secrets.h
+**/secrets.h
+
+# Sauvegardes et anciennes versions locales
+_sauvegarde_*/
+OLD VERSION/
+CODE_ESP_CLIENT_copie/
+
+# Divers
+.DS_Store
+__pycache__/
+*.pyc
+*.log
+publier_sur_github.sh
