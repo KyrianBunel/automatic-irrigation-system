@@ -1,0 +1,21 @@
+INSTALLATION DU RASPBERRY PI
+============================
+
+Tout est automatisé par setup.sh (à lancer avec l'utilisateur habituel, sans sudo) :
+
+    git clone https://github.com/KyrianBunel/automatic-irrigation-system.git
+    cd automatic-irrigation-system
+    ./setup.sh
+
+Le script :
+  - installe Mosquitto (avec mot de passe obligatoire) et les paquets Python ;
+  - crée /etc/arrosage/config.json et /etc/arrosage/identifiants_mqtt.txt ;
+  - crée trois services systemd : arrosage-meteo, arrosage-logique, arrosage-web.
+
+VÉRIFIER QUE TOUT FONCTIONNE
+  systemctl status 'arrosage-*'
+  journalctl -u arrosage-logique -f
+  mosquitto_sub -u arrosage -P '<mot de passe>' -t 'arrosage/#' -v
+
+L'ancienne procédure (rc.local, service unique ArrosageAUTO.service) n'est plus utilisée :
+setup.sh supprime l'ancien service s'il est présent.

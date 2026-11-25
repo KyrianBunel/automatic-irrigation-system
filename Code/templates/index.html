@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Arrosage</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arrosage">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#EEF2EC" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111915" media="(prefers-color-scheme: dark)">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="{{ url_for('manifeste') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('icone') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icones/icone-192.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body data-csrf="{{ csrf }}" data-zones="{{ nb }}">
+
+<header class="barre">
+  <span class="marque">Arrosage</span>
+  <span id="liaison" class="liaison">Connexion…</span>
+</header>
+
+<main>
+  <section class="etat" id="etat" aria-live="polite">
+    <h1 id="phrase" class="phrase">…</h1>
+    <p id="detail" class="detail"></p>
+    <div id="debit" class="debit" hidden><span id="debit-niveau"></span></div>
+    <button id="arreter" class="bouton arreter" type="button" hidden>Tout arrêter</button>
+  </section>
+
+  <section class="bloc">
+    <h2>Mode</h2>
+    <div class="segments" role="radiogroup" aria-label="Mode d'arrosage">
+      <button type="button" role="radio" data-mode="MANU" aria-checked="false">Manuel</button>
+      <button type="button" role="radio" data-mode="AUTO" aria-checked="false">Météo</button>
+      <button type="button" role="radio" data-mode="PROG" aria-checked="false">Programme</button>
+    </div>
+    <p id="explication" class="aide"></p>
+    <p id="decision" class="decision" hidden></p>
+  </section>
+
+  <section class="bloc">
+    <h2>Zones</h2>
+    <ul id="zones" class="liste"></ul>
+  </section>
+
+  <section class="bloc" id="panneau-auto" hidden>
+    <h2>Quand arroser</h2>
+    <p class="aide" id="regle-auto"></p>
+    <ul id="criteres" class="liste"></ul>
+    <div class="liste">
+      <div class="ligne">
+        <span>Durée par zone</span>
+        <div class="pas">
+          <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+          <input id="duree-auto" type="number" inputmode="numeric" min="1" max="120" aria-label="Durée par zone en minutes">
+          <span class="unite">min</span>
+          <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
+        </div>
+      </div>
+    </div>
+    <button id="lancer" type="button" class="bouton principal">Arroser toutes les zones maintenant</button>
+  </section>
+
+  <section class="bloc" id="panneau-prog" hidden>
+    <h2>Programme</h2>
+    <p id="prochain" class="prochain"></p>
+    <form id="form-prog" novalidate>
+      <div class="liste">
+        <label class="ligne">Du <input type="date" name="dateDebut" required></label>
+        <label class="ligne">Au <input type="date" name="dateFin" required></label>
+        <div class="ligne">
+          <span>Tous les</span>
+          <div class="pas">
+            <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+            <input name="recurrence" type="number" inputmode="numeric" min="1" max="365" aria-label="Fréquence en jours">
+            <span class="unite">j</span>
+            <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
+          </div>
+        </div>
+        <div class="ligne">
+          <span>Durée par zone</span>
+          <div class="pas">
+            <button type="button" class="pas-moins" aria-label="Diminuer">−</button>
+            <input name="duree" type="number" inputmode="numeric" min="1" max="120" aria-label="Durée par zone en minutes">
+            <span class="unite">min</span>
+            <button type="button" class="pas-plus" aria-label="Augmenter">+</button>
+          </div>
+        </div>
+      </div>
+      <h3>Zones et heures de départ</h3>
+      <ul id="prog-zones" class="liste"></ul>
+      <p class="aide" id="aide-prog"></p>
+      <ul id="erreurs" class="erreurs" hidden></ul>
+      <button type="submit" class="bouton principal">Enregistrer le programme</button>
+    </form>
+  </section>
+
+  <section class="bloc">
+    <h2>Au jardin</h2>
+    <dl id="meteo" class="meteo"></dl>
+    <p id="meteo-maj" class="aide"></p>
+  </section>
+
+  <p id="installer" class="installer" hidden>
+    Pour l'avoir comme une app : touchez <strong>Partager</strong>, puis <strong>Sur l'écran d'accueil</strong>.
+    <button type="button" id="installer-fermer" class="lien">Masquer</button>
+  </p>
+
+  <footer>
+    <form method="post" action="{{ url_for('deconnexion') }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="lien">Se déconnecter</button>
+    </form>
+  </footer>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

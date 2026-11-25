@@ -1,0 +1,15 @@
+{
+  "name": "Arrosage du jardin",
+  "short_name": "Arrosage",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#EEF2EC",
+  "theme_color": "#EEF2EC",
+  "icons": [
+    { "src": "/static/icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icones/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
